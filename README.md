@@ -1,0 +1,140 @@
+# Praxis
+
+![Praxis](assets/hero.png)
+
+*From Greek: the process of putting ideas into practice.*
+
+A complete AI-assisted development workflow, packaged as portable agent skills and sub-agents. Praxis implements a structured development cycle — from idea to production code to documented learnings — designed to make each cycle of work improve the next. The name reflects what this workflow is about: not just thinking or just doing, but the disciplined cycle of idea → practice → reflection that makes each iteration better than the last.
+
+This workflow mirrors how I personally develop software — brainstorm until the idea is clear, plan concretely before touching code, implement with discipline, review rigorously, and always look back to learn. Praxis encodes that process so AI agents can follow it consistently.
+
+Inspired by [Every's Compound Engineering guide](https://every.to/guides/compound-engineering) and its core principle: **every unit of engineering work should make subsequent units easier, not harder.**
+
+### Why Praxis?
+
+**Project and technology agnostic.** Praxis is not tied to any language, framework, or tech stack. It works with any codebase — drop it into an Elixir project, a React app, a Rust CLI, or a Rails monolith. The skills describe *how to work*, not *what to work on*.
+
+**Context window efficient.** Every design decision respects the limited context window of AI agents. Templates are loaded on demand through progressive disclosure, not upfront. Research runs in parallel sub-agents that return summaries instead of polluting the main thread. Shared conventions live in one file, referenced by many. The goal: spend tokens on the real work, not on infrastructure.
+
+**Tool agnostic.** No dependency on a specific AI coding tool. Skills and agents use standard markdown with YAML frontmatter, compatible with [Amp](https://ampcode.com), [Claude Code](https://code.claude.com), and similar tools.
+
+## The Cycle
+
+```
+brainstorming → planning → implementing → reviewing → retrospective
+      ↑                                                      │
+      └──────────────── learnings feed back ─────────────────┘
+```
+
+1. **Brainstorming** — Explore ideas through conversation. No code, no technical details. Output: idea files.
+2. **Planning** — Turn an idea into concrete, actionable implementation plans. Parallel sub-agents research the codebase, past learnings, and external best practices. Output: plan files.
+3. **Implementing** — Execute a plan step by step, committing meaningful units of work. Output: code on a feature branch.
+4. **Reviewing** — Run configurable reviewer agents in parallel against the changed code. Findings are presented, not auto-fixed. Output: prioritized review findings.
+5. **Retrospective** — Analyze completed work, capture specific learnings. Output: learning files that feed back into future brainstorming and planning sessions.
+
+## Getting Started
+
+### Prerequisites
+
+- An AI coding agent that supports skills/agents (e.g., [Amp](https://ampcode.com), [Claude Code](https://code.claude.com))
+- [Git](https://git-scm.com/)
+- [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`) — fast text search
+- [ast-grep](https://github.com/ast-grep/ast-grep) (`sg`) — structural/AST-aware code search (optional, recommended)
+
+### Installation
+
+Copy the `.agents/` directory into your project:
+
+```bash
+cp -r path/to/praxis/.agents your-project/.agents
+```
+
+Or add Praxis as a Git submodule if you prefer to pull updates:
+
+```bash
+git submodule add <praxis-repo-url> .praxis
+ln -s .praxis/.agents .agents
+```
+
+### Usage
+
+Invoke skills by name through your AI agent:
+
+```
+/skill brainstorming a better way to handle user onboarding
+/skill planning .ai-workflow/ideas/20260222-user-onboarding.md
+/skill implementing .ai-workflow/plans/20260222-user-onboarding-phase-1.md
+/skill reviewing staged
+/skill retrospective .ai-workflow/plans/20260222-user-onboarding-phase-1.md
+```
+
+## Project Structure
+
+```
+.agents/
+├── conventions.md                        # Shared conventions (directories, naming, tags, statuses)
+├── reviewer-output-format.md             # Shared output format for all reviewers
+├── agents/
+│   ├── codebase-explorer.md              # Explores the repo for relevant code
+│   ├── knowledge-reviewer.md             # Searches past learnings
+│   ├── external-researcher.md            # Searches the web for best practices
+│   └── reviewers/                        # Add/remove reviewers to customize
+│       ├── agent-accessibility.md
+│       ├── architecture.md
+│       ├── code-quality.md
+│       ├── data-integrity.md
+│       ├── pattern-recognition.md
+│       ├── performance.md
+│       ├── security.md                   # Includes OWASP Top 10:2025
+│       └── simplicity.md
+└── skills/
+    ├── brainstorming/
+    │   ├── SKILL.md
+    │   └── reference/template.md         # Idea file template
+    ├── planning/
+    │   ├── SKILL.md
+    │   └── reference/template.md         # Plan file template
+    ├── implementing/
+    │   └── SKILL.md
+    ├── reviewing/
+    │   └── SKILL.md
+    └── retrospective/
+        ├── SKILL.md
+        └── reference/template.md         # Learning file template
+
+.ai-workflow/                             # Created automatically during use
+├── tags                                  # Shared tag registry
+├── ideas/                                # Brainstormed ideas
+├── plans/                                # Implementation plans
+└── learnings/                            # Documented insights from retrospectives
+```
+
+## Customization
+
+### Adding project-specific reviewers
+
+Drop a `.md` file into `.agents/agents/reviewers/`. The reviewing skill discovers and runs all reviewers in that directory automatically. Follow the output format in `.agents/reviewer-output-format.md`.
+
+Example: create `.agents/agents/reviewers/elixir-conventions.md` for Elixir-specific checks.
+
+### Removing default reviewers
+
+Delete any reviewer file you don't need. For example, remove `data-integrity.md` if your project doesn't use a database.
+
+### Tags
+
+All documents (ideas, plans, learnings) share a single tag registry at `.ai-workflow/tags`. Tags are maintained automatically — the skills read existing tags before assigning new ones to keep vocabulary consistent.
+
+### File templates
+
+Templates for ideas, plans, and learnings live in `reference/template.md` under each skill directory. Modify them to match your team's preferences.
+
+## Design Principles
+
+- **Compounding knowledge** — Retrospective learnings feed back into brainstorming and planning, so the system gets smarter with each cycle.
+- **Traceability** — Every plan links to its idea, every learning links to its plan. Status fields track documents through the full lifecycle.
+- **Configurability** — Reviewers are discoverable by convention. Add or remove them per project without changing any configuration.
+
+## License
+
+MIT
