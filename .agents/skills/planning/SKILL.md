@@ -68,6 +68,10 @@ After the user approves the plan:
 - Add the plan file path(s) to the idea's "Related Documents" section
 - If multiple plans were created, they reference each other via `group` and `phase` in frontmatter
 
+### 7. Offer to commit
+
+After saving the plan and updating related documents, ask the user if they'd like to commit the changes. If they agree, stage only the relevant files and commit following the Git conventions in @.agents/conventions.md. Always let the user review before committing.
+
 ## File conventions
 
 Follow the tag, naming, and status conventions in @.agents/conventions.md.
