@@ -1,7 +1,7 @@
 ---
 title: NPM CLI for Praxis Distribution
 date: 2026-02-23
-status: ready
+status: in-progress
 ideas:
   - .ai-workflow/ideas/20260223-npm-cli-distribution.md
 group: npm-cli-distribution
