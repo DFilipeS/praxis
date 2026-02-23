@@ -12,10 +12,12 @@ function followRedirect(url) {
   return new Promise((resolve, reject) => {
     get(url, { headers: { "User-Agent": "praxis-cli" } }, (res) => {
       if (res.statusCode === 301 || res.statusCode === 302) {
+        res.resume();
         resolve(res.headers.location);
       } else if (res.statusCode === 200) {
         resolve(url);
       } else {
+        res.resume();
         reject(
           new Error(
             `GitHub API returned status ${res.statusCode}. ${res.statusCode === 403 ? "You may be rate-limited." : ""}`
@@ -30,6 +32,7 @@ function downloadBuffer(url) {
   return new Promise((resolve, reject) => {
     get(url, { headers: { "User-Agent": "praxis-cli" } }, (res) => {
       if (res.statusCode !== 200) {
+        res.resume();
         reject(new Error(`Download failed with status ${res.statusCode}`));
         return;
       }
@@ -60,6 +63,7 @@ export async function fetchTemplates() {
     });
 
     await new Promise((resolve, reject) => {
+      stream.on("error", reject);
       stream.pipe(extractor);
       extractor.on("end", resolve);
       extractor.on("error", reject);

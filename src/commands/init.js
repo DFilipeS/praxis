@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { createPatch } from "diff";
 import pc from "picocolors";
@@ -40,6 +40,11 @@ export async function init() {
   let skipped = 0;
 
   for (const [relativePath, content] of [...templates.entries()].sort()) {
+    const resolvedPath = resolve(projectRoot, relativePath);
+    if (!resolvedPath.startsWith(resolve(projectRoot))) {
+      continue;
+    }
+
     const fullPath = join(projectRoot, relativePath);
 
     await mkdir(dirname(fullPath), { recursive: true });
@@ -92,6 +97,7 @@ export async function init() {
       }
 
       if (finalAction === "skip") {
+        manifestFiles[relativePath] = { hash: hashContent(existingContent) };
         skipped++;
         continue;
       }
