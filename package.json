@@ -1,0 +1,31 @@
+{
+  "name": "@dfilipes/praxis",
+  "version": "0.1.0",
+  "description": "AI-assisted development workflow — portable agent skills and sub-agents",
+  "type": "module",
+  "bin": {
+    "praxis": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "src/"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "workflow",
+    "cli",
+    "developer-experience"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@clack/prompts": "^0.10.0",
+    "commander": "^13.1.0",
+    "diff": "^7.0.0",
+    "picocolors": "^1.1.1",
+    "tar": "^7.4.3"
+  }
+}
