@@ -1,13 +1,13 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { createPatch } from "diff";
 import pc from "picocolors";
 import { fetchTemplates } from "../templates.js";
 import {
   hashContent,
-  hashFile,
+  isLocallyModified,
   readManifest,
   writeManifest,
 } from "../manifest.js";
@@ -94,6 +94,11 @@ export async function update() {
 
   // Handle new files
   for (const { relativePath, content, hash } of newFiles) {
+    const resolvedPath = resolve(projectRoot, relativePath);
+    if (!resolvedPath.startsWith(resolve(projectRoot))) {
+      continue;
+    }
+
     const fullPath = join(projectRoot, relativePath);
     await mkdir(dirname(fullPath), { recursive: true });
     await writeFile(fullPath, content);
@@ -104,13 +109,16 @@ export async function update() {
 
   // Handle changed files
   for (const { relativePath, content, hash } of changedFiles) {
+    const resolvedPath = resolve(projectRoot, relativePath);
+    if (!resolvedPath.startsWith(resolve(projectRoot))) {
+      continue;
+    }
+
     const fullPath = join(projectRoot, relativePath);
 
-    let locallyModified = false;
-    if (existsSync(fullPath)) {
-      const currentHash = await hashFile(fullPath);
-      locallyModified = currentHash !== manifest.files[relativePath].hash;
-    }
+    const locallyModified = existsSync(fullPath)
+      ? await isLocallyModified(projectRoot, relativePath, manifest)
+      : false;
 
     if (!locallyModified) {
       await writeFile(fullPath, content);
@@ -176,15 +184,18 @@ export async function update() {
   for (const relativePath of removedFiles) {
     const fullPath = join(projectRoot, relativePath);
 
+    const resolvedPath = resolve(projectRoot, relativePath);
+    if (!resolvedPath.startsWith(resolve(projectRoot))) {
+      continue;
+    }
+
     if (!existsSync(fullPath)) {
       delete updatedManifestFiles[relativePath];
       removed++;
       continue;
     }
 
-    let locallyModified = false;
-    const currentHash = await hashFile(fullPath);
-    locallyModified = currentHash !== manifest.files[relativePath].hash;
+    const locallyModified = await isLocallyModified(projectRoot, relativePath, manifest);
 
     const warning = locallyModified
       ? ` ${pc.yellow("(locally modified)")}`
