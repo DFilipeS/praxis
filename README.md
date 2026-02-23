@@ -43,18 +43,37 @@ brainstorming → planning → implementing → reviewing → retrospective
 
 ### Installation
 
-Copy the `.agents/` directory into your project:
+The recommended way to install Praxis is via the CLI (requires Node.js 18+):
+
+```bash
+npx @dfilipes/praxis init
+```
+
+This creates the `.agents/` directory with all Praxis skills and agents, sets up `.ai-workflow/` directories, and writes a `.praxis-manifest.json` file to track installed files. Commit `.praxis-manifest.json` to version control so the CLI can detect changes on future updates.
+
+To update to the latest version:
+
+```bash
+npx @dfilipes/praxis update
+```
+
+The update command fetches the latest files from the Praxis repo's main branch, applies changes, and prompts you before overwriting any files you've locally modified.
+
+To check the status of managed files:
+
+```bash
+npx @dfilipes/praxis status
+```
+
+#### Manual installation
+
+If you don't use Node.js, copy the `.agents/` directory into your project:
 
 ```bash
 cp -r path/to/praxis/.agents your-project/.agents
 ```
 
-Or add Praxis as a Git submodule if you prefer to pull updates:
-
-```bash
-git submodule add <praxis-repo-url> .praxis
-ln -s .praxis/.agents .agents
-```
+Note that manual copies won't receive automatic updates.
 
 ### Usage
 
