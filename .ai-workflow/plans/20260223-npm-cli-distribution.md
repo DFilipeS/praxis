@@ -153,18 +153,18 @@ Update the existing `README.md` to replace or supplement the current installatio
 
 ## Acceptance Criteria
 
-- [ ] `npx @DFilipeS/praxis init` in a fresh project creates `.agents/` with all 21 template files, creates `.ai-workflow/` directories, and writes `.praxis-manifest.json` at the project root
-- [ ] Running `init` when already initialized displays a message and falls back to `update`
-- [ ] `npx @DFilipeS/praxis update` fetches latest files from the Praxis repo's main branch and applies changes
-- [ ] `update` detects locally modified files and prompts the user before overwriting, showing a unified diff
-- [ ] `update` handles new files (added in Praxis since last install) and removed files (deleted in Praxis since last install)
-- [ ] `npx @DFilipeS/praxis status` shows the state of all managed files (unchanged, modified, missing)
-- [ ] The manifest tracks a SHA-256 hash per managed file for modification detection
-- [ ] The CLI works via `npx` with no prior installation
-- [ ] `AGENTS.md` is never created or managed by the CLI
-- [ ] `.ai-workflow/` directories are created but not tracked in the manifest
-- [ ] Existing project files in `.agents/` that aren't managed by Praxis are left untouched
-- [ ] The README documents the CLI usage
+- [x] `npx @DFilipeS/praxis init` in a fresh project creates `.agents/` with all 21 template files, creates `.ai-workflow/` directories, and writes `.praxis-manifest.json` at the project root
+- [x] Running `init` when already initialized displays a message and falls back to `update`
+- [x] `npx @DFilipeS/praxis update` fetches latest files from the Praxis repo's main branch and applies changes
+- [x] `update` detects locally modified files and prompts the user before overwriting, showing a unified diff
+- [x] `update` handles new files (added in Praxis since last install) and removed files (deleted in Praxis since last install)
+- [x] `npx @DFilipeS/praxis status` shows the state of all managed files (unchanged, modified, missing)
+- [x] The manifest tracks a SHA-256 hash per managed file for modification detection
+- [x] The CLI works via `npx` with no prior installation
+- [x] `AGENTS.md` is never created or managed by the CLI
+- [x] `.ai-workflow/` directories are created but not tracked in the manifest
+- [x] Existing project files in `.agents/` that aren't managed by Praxis are left untouched
+- [x] The README documents the CLI usage
 
 ## Dependencies
 
