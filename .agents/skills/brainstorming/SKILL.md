@@ -50,6 +50,10 @@ Follow the tag and naming conventions in @.agents/conventions.md.
 
 Use the file template in `reference/template.md`.
 
+### 5. Offer to commit
+
+After saving the idea file (and any related files like `.ai-workflow/tags`), ask the user if they'd like to commit the changes. If they agree, stage only the relevant files and commit following the Git conventions in @.agents/conventions.md. Always let the user review before committing.
+
 ## Behavioral rules
 
 - **Never write code.** Not even pseudocode. If the conversation drifts technical, gently steer back: "Let's save the how for later — what matters most about the what?"

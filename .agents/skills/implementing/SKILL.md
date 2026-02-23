@@ -65,24 +65,9 @@ After implementation and review are complete:
 
 ## Git conventions
 
-### Commits
+Follow the Git conventions in @.agents/conventions.md.
 
 Commits should tell a story to reviewers (AI or human). It is fine to have multiple commits per step if they make logical sense — prefer meaningful, reviewable units over one giant commit.
-
-Commit message format:
-
-```
-Single sentence summarizing what the commit does
-
-Longer description with more details about the change. Explain the why,
-not just the what. Reference the plan step if helpful for context.
-```
-
-Only stage files directly related to the current change — never use `git add -A` or `git add .`.
-
-### Branches
-
-Use the `implement/` prefix for branch names: `implement/plan-slug` (e.g., `implement/offline-first-sync-phase-1`).
 
 ## Behavioral rules
 

@@ -18,6 +18,27 @@ All documents share a single tag registry at `.ai-workflow/tags` (one tag per li
 
 Before assigning tags, read `.ai-workflow/tags` and reuse existing tags whenever they fit. Only create a new tag when nothing existing covers the concept — if you do, append it to `.ai-workflow/tags` maintaining alphabetical order.
 
+## Git conventions
+
+### Commits
+
+Commit message format:
+
+```
+Single sentence summarizing what the commit does, ending with a full stop.
+
+Longer description with more details about the change. Explain the why,
+not just the what. Reference the plan step if helpful for context.
+```
+
+The first line must be a complete, well-formed sentence with a final full stop.
+
+Only stage files directly related to the current change — never use `git add -A` or `git add .`.
+
+### Branches
+
+Use the `implement/` prefix for implementation branch names: `implement/plan-slug` (e.g., `implement/offline-first-sync-phase-1`).
+
 ## Status values
 
 ### Ideas
