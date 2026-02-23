@@ -1,4 +1,3 @@
-import { get } from "node:https";
 import { mkdtemp, rm, readdir, stat, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -8,45 +7,33 @@ import { extract } from "tar";
 const TARBALL_URL =
   "https://api.github.com/repos/DFilipeS/praxis/tarball/main";
 
-function followRedirect(url) {
-  return new Promise((resolve, reject) => {
-    get(url, { headers: { "User-Agent": "praxis-cli" } }, (res) => {
-      if (res.statusCode === 301 || res.statusCode === 302) {
-        res.resume();
-        resolve(res.headers.location);
-      } else if (res.statusCode === 200) {
-        resolve(url);
-      } else {
-        res.resume();
-        reject(
-          new Error(
-            `GitHub API returned status ${res.statusCode}. ${res.statusCode === 403 ? "You may be rate-limited." : ""}`
-          )
-        );
-      }
-    }).on("error", reject);
-  });
-}
-
-function downloadBuffer(url) {
-  return new Promise((resolve, reject) => {
-    get(url, { headers: { "User-Agent": "praxis-cli" } }, (res) => {
-      if (res.statusCode !== 200) {
-        res.resume();
-        reject(new Error(`Download failed with status ${res.statusCode}`));
-        return;
-      }
-      const chunks = [];
-      res.on("data", (chunk) => chunks.push(chunk));
-      res.on("end", () => resolve(Buffer.concat(chunks)));
-      res.on("error", reject);
-    }).on("error", reject);
-  });
-}
+const MAX_DOWNLOAD_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export async function fetchTemplates() {
-  const redirectUrl = await followRedirect(TARBALL_URL);
-  const buffer = await downloadBuffer(redirectUrl);
+  const res = await fetch(TARBALL_URL, {
+    headers: { "User-Agent": "praxis-cli" },
+    redirect: "follow",
+  });
+
+  if (!res.ok) {
+    const hint = res.status === 403 ? " You may be rate-limited." : "";
+    throw new Error(`GitHub API returned status ${res.status}.${hint}`);
+  }
+
+  const contentLength = Number(res.headers.get("content-length"));
+  if (contentLength > MAX_DOWNLOAD_SIZE) {
+    throw new Error(
+      `Response too large (${contentLength} bytes). Maximum is ${MAX_DOWNLOAD_SIZE} bytes.`
+    );
+  }
+
+  const buffer = Buffer.from(await res.arrayBuffer());
+
+  if (buffer.length > MAX_DOWNLOAD_SIZE) {
+    throw new Error(
+      `Downloaded content too large (${buffer.length} bytes). Maximum is ${MAX_DOWNLOAD_SIZE} bytes.`
+    );
+  }
 
   const tmpDir = await mkdtemp(join(tmpdir(), "praxis-"));
 
