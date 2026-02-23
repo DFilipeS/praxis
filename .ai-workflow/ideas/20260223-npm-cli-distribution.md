@@ -1,7 +1,7 @@
 ---
 title: NPM CLI for Praxis Distribution
 date: 2026-02-23
-status: raw
+status: planning
 tags: [cli, distribution, npm, developer-experience, tooling]
 ---
 
@@ -38,4 +38,4 @@ The implementation is fairly clear — a Node.js CLI published to npm. The main 
 
 ## Related Documents
 
-- (none yet)
+- .ai-workflow/plans/20260223-npm-cli-distribution.md
