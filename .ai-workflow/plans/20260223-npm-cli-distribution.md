@@ -1,7 +1,7 @@
 ---
 title: NPM CLI for Praxis Distribution
 date: 2026-02-23
-status: in-progress
+status: done
 ideas:
   - .ai-workflow/ideas/20260223-npm-cli-distribution.md
 group: npm-cli-distribution
@@ -174,3 +174,6 @@ Update the existing `README.md` to replace or supplement the current installatio
 ## Related Documents
 
 - .ai-workflow/ideas/20260223-npm-cli-distribution.md
+- .ai-workflow/learnings/20260224-include-tests-in-implementation-plans.md
+- .ai-workflow/learnings/20260224-verify-library-apis-before-planning.md
+- .ai-workflow/learnings/20260224-parallel-reviewers-catch-cross-cutting-issues.md
