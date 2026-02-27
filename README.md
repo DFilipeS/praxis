@@ -40,6 +40,7 @@ brainstorming → planning → implementing → reviewing → retrospective
 - [Git](https://git-scm.com/)
 - [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`) — fast text search
 - [ast-grep](https://github.com/ast-grep/ast-grep) (`sg`) — structural/AST-aware code search (optional, recommended)
+- [agent-browser](https://github.com/vercel-labs/agent-browser) — browser automation CLI (optional, required by `agent-browser` skill): `npm install -g agent-browser && agent-browser install`
 
 ### Installation
 
@@ -115,6 +116,10 @@ Invoke skills by name through your AI agent:
     │   └── reference/template.md         # Plan file template
     ├── implementing/
     │   └── SKILL.md
+    ├── agent-browser/
+    │   ├── SKILL.md
+    │   ├── references/                   # Deep-dive docs (commands, sessions, auth, etc.)
+    │   └── templates/                    # Ready-to-use shell scripts
     ├── figma-to-code/
     │   ├── SKILL.md
     │   └── mcp.json                      # Bundles figma-developer-mcp
