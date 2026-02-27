@@ -1,0 +1,22 @@
+{
+  "mobile-mcp": {
+    "command": "npx",
+    "args": ["-y", "@mobilenext/mobile-mcp@latest"],
+    "includeTools": [
+      "mobile_list_available_devices",
+      "mobile_launch_app",
+      "mobile_terminate_app",
+      "mobile_get_screen_size",
+      "mobile_click_on_screen_at_coordinates",
+      "mobile_double_tap_on_screen",
+      "mobile_long_press_on_screen_at_coordinates",
+      "mobile_list_elements_on_screen",
+      "mobile_press_button",
+      "mobile_swipe_on_screen",
+      "mobile_type_keys",
+      "mobile_take_screenshot",
+      "mobile_set_orientation",
+      "mobile_get_orientation"
+    ]
+  }
+}

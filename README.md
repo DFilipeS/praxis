@@ -41,6 +41,7 @@ brainstorming → planning → implementing → reviewing → retrospective
 - [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`) — fast text search
 - [ast-grep](https://github.com/ast-grep/ast-grep) (`sg`) — structural/AST-aware code search (optional, recommended)
 - [agent-browser](https://github.com/vercel-labs/agent-browser) — browser automation CLI (optional, required by `agent-browser` skill): `npm install -g agent-browser && agent-browser install`
+- [mobile-mcp](https://github.com/mobile-next/mobile-mcp) prerequisites (optional, required by `mobile-mcp` skill): Node.js v22+, Xcode CLI tools (iOS), Android SDK Platform Tools (Android)
 
 ### Installation
 
@@ -120,6 +121,9 @@ Invoke skills by name through your AI agent:
     │   ├── SKILL.md
     │   ├── references/                   # Deep-dive docs (commands, sessions, auth, etc.)
     │   └── templates/                    # Ready-to-use shell scripts
+    ├── mobile-mcp/
+    │   ├── SKILL.md
+    │   └── mcp.json                      # Bundles @mobilenext/mobile-mcp
     ├── figma-to-code/
     │   ├── SKILL.md
     │   └── mcp.json                      # Bundles figma-developer-mcp
