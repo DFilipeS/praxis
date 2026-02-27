@@ -115,6 +115,9 @@ Invoke skills by name through your AI agent:
     │   └── reference/template.md         # Plan file template
     ├── implementing/
     │   └── SKILL.md
+    ├── figma-to-code/
+    │   ├── SKILL.md
+    │   └── mcp.json                      # Bundles figma-developer-mcp
     ├── reviewing/
     │   └── SKILL.md
     └── retrospective/
@@ -143,6 +146,14 @@ Delete any reviewer file you don't need. For example, remove `data-integrity.md`
 ### Tags
 
 All documents (ideas, plans, learnings) share a single tag registry at `.ai-workflow/tags`. Tags are maintained automatically — the skills read existing tags before assigning new ones to keep vocabulary consistent.
+
+### Environment variables
+
+Some skills require environment variables to connect to external services:
+
+| Variable        | Required by                  | Description                                                                                                                                                                     |
+| --------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FIGMA_API_KEY` | `figma-to-code` | [Figma personal access token](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens) with read permissions on _File content_ and _Dev resources_ |
 
 ### File templates
 
