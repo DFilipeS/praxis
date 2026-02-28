@@ -16,7 +16,10 @@ vi.mock("../../src/manifest.js", async (importOriginal) => {
 });
 vi.mock("../../src/files.js", async (importOriginal) => {
   const actual = await importOriginal();
-  return { installFile: vi.fn(actual.installFile) };
+  return {
+    installFile: vi.fn(actual.installFile),
+    isSafePath: actual.isSafePath,
+  };
 });
 
 import * as p from "@clack/prompts";
@@ -375,6 +378,18 @@ describe("components", () => {
     expect(p.log.info).toHaveBeenCalledWith(expect.stringContaining("No changes"));
   });
 
+  it("cancels when installFile returns cancelled during additions", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+    installFile.mockResolvedValueOnce({ status: "cancelled" });
+
+    await expect(components()).rejects.toThrow("process.exit(0)");
+    expect(p.cancel).toHaveBeenCalled();
+  });
+
   it("silently ignores writeManifest failure in error catch block", async () => {
     readManifest.mockResolvedValue(
       makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
@@ -428,10 +443,11 @@ describe("components", () => {
 
     await expect(components()).rejects.toThrow("disk full");
 
-    // Partial manifest should have been written (selectedComponents reflects the intended new selection)
+    // Partial manifest should have been written preserving the original selectedComponents
+    // (catch block keeps manifest.selectedComponents so the field matches the last known-good state)
     const raw = await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8");
     const manifest = JSON.parse(raw);
-    expect(manifest.selectedComponents).toEqual({ skills: ["agent-browser"], reviewers: [] });
+    expect(manifest.selectedComponents).toEqual({ skills: [], reviewers: [] });
   });
 
   it("outro when no optional components available", async () => {

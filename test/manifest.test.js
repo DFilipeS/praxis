@@ -75,9 +75,9 @@ describe('readManifest', () => {
     expect(await readManifest(tmpDir)).toBeNull();
   });
 
-  it('returns null on invalid JSON', async () => {
+  it('throws on invalid JSON', async () => {
     await writeFile(join(tmpDir, '.praxis-manifest.json'), '{not valid json');
-    expect(await readManifest(tmpDir)).toBeNull();
+    await expect(readManifest(tmpDir)).rejects.toThrow(SyntaxError);
   });
 });
 

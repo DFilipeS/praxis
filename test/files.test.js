@@ -111,7 +111,7 @@ describe("installFile", () => {
     expect(await readFile(fullPath, "utf-8")).toBe("old content");
   });
 
-  it("cancels on first select cancel", async () => {
+  it("returns cancelled on first select cancel", async () => {
     const fullPath = join(tmpDir, "conflict.md");
     await writeFile(fullPath, "old content");
 
@@ -119,13 +119,12 @@ describe("installFile", () => {
     p.select = vi.fn().mockResolvedValue(cancelSymbol);
     p.isCancel = vi.fn((v) => typeof v === "symbol");
 
-    await expect(installFile(fullPath, "conflict.md", "new content")).rejects.toThrow(
-      "process.exit(0)"
-    );
-    expect(p.cancel).toHaveBeenCalled();
+    const result = await installFile(fullPath, "conflict.md", "new content");
+    expect(result.status).toBe("cancelled");
+    expect(p.cancel).not.toHaveBeenCalled();
   });
 
-  it("cancels on second select (after diff) cancel", async () => {
+  it("returns cancelled on second select (after diff) cancel", async () => {
     const fullPath = join(tmpDir, "conflict.md");
     await writeFile(fullPath, "old content");
 
@@ -135,9 +134,8 @@ describe("installFile", () => {
       .mockResolvedValueOnce(cancelSymbol);
     p.isCancel = vi.fn((v) => typeof v === "symbol");
 
-    await expect(installFile(fullPath, "conflict.md", "new content")).rejects.toThrow(
-      "process.exit(0)"
-    );
-    expect(p.cancel).toHaveBeenCalled();
+    const result = await installFile(fullPath, "conflict.md", "new content");
+    expect(result.status).toBe("cancelled");
+    expect(p.cancel).not.toHaveBeenCalled();
   });
 });
