@@ -32,6 +32,43 @@ brainstorming → planning → implementing → reviewing → retrospective
 4. **Reviewing** — Run configurable reviewer agents in parallel against the changed code. Findings are presented, not auto-fixed. Output: prioritized review findings.
 5. **Retrospective** — Analyze completed work, capture specific learnings. Output: learning files that feed back into future brainstorming and planning sessions.
 
+## Components
+
+### Skills
+
+Core skills implement the full development cycle and are always installed.
+
+| Skill | Description |
+| --- | --- |
+| `brainstorming` | Explore ideas through open-ended conversation before any planning or implementation |
+| `planning` | Turn a brainstormed idea into a concrete, phased implementation plan |
+| `implementing` | Execute a plan step by step, committing meaningful units of work |
+| `reviewing` | Run configurable reviewer agents in parallel; findings are presented, not auto-fixed |
+| `retrospective` | Capture specific learnings from completed work to improve future cycles |
+
+Optional skills are project-specific. Select them during `praxis init` or change your selection anytime with `praxis components`.
+
+| Skill | Description |
+| --- | --- |
+| `agent-browser` | Browser automation via CLI — navigate pages, fill forms, extract data, and test web apps |
+| `figma-to-code` | Fetch Figma designs via MCP and implement them as React components |
+| `mobile-mcp` | Automate iOS simulators and Android emulators for mobile app testing |
+
+### Reviewers
+
+All reviewers are optional. They run in parallel during the reviewing skill. Add project-specific ones or remove built-in ones by editing `.agents/agents/reviewers/`.
+
+| Reviewer | Description |
+| --- | --- |
+| `agent-accessibility` | Ensures code stays readable and navigable for AI agents |
+| `architecture` | Checks for layer violations and design pattern consistency |
+| `code-quality` | Reviews for bugs, logic errors, and general correctness |
+| `data-integrity` | Flags unsafe migrations, missing constraints, and transaction risks |
+| `pattern-recognition` | Checks for deviations from established codebase patterns and naming conventions |
+| `performance` | Flags N+1 queries, unnecessary allocations, and performance anti-patterns |
+| `security` | Reviews against OWASP Top 10 and other common vulnerabilities |
+| `simplicity` | Flags over-engineering and unnecessary complexity |
+
 ## Getting Started
 
 ### Prerequisites
