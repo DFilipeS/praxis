@@ -24,12 +24,13 @@ Update the plan's `status` to `in-progress`.
 
 ### 2. Set up a branch
 
-Create a new Git branch for this implementation. Use a descriptive branch name based on the plan slug (e.g., `implement/offline-first-sync-phase-1`).
+Before doing anything with Git, **always ask the user** using the AskUserQuestion tool what they'd like to do. Present these options:
 
-- If currently on `main` or `master`, branch from it.
-- If on another branch, ask the user whether to branch from the current branch, `main`/`master`, or a specific branch.
+1. **Stay on the current branch** — continue working on whatever branch is currently checked out.
+2. **Create a new branch from the current branch** — use a descriptive name based on the plan slug (e.g., `implement/offline-first-sync-phase-1`).
+3. **Something else** — let the user specify (e.g., branch from `main`, use a custom name, create a Git worktree, etc.).
 
-The user may also request a Git worktree instead of a regular branch. If so, create the worktree and work there.
+Wait for the user's answer before proceeding. Follow their choice exactly.
 
 ### 3. Implement step by step
 
