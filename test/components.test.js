@@ -6,6 +6,9 @@ import {
   discoverOptionalComponents,
   getComponentDescription,
   getSelectedComponents,
+  encodeComponentValue,
+  decodeComponentValue,
+  buildGroupOptions,
 } from "../src/components.js";
 
 // A minimal mock templates map for testing
@@ -249,5 +252,50 @@ describe("getSelectedComponents", () => {
     expect(result.skills).toContain("agent-browser");
     expect(result.skills).not.toContain("brainstorming");
     expect(result.reviewers).toContain("security");
+  });
+});
+
+describe("encodeComponentValue / decodeComponentValue", () => {
+  it("encodes and decodes a simple value", () => {
+    const encoded = encodeComponentValue("skill", "agent-browser");
+    expect(encoded).toBe("skill:agent-browser");
+    expect(decodeComponentValue(encoded)).toEqual({ type: "skill", name: "agent-browser" });
+  });
+
+  it("correctly handles a component name containing a colon", () => {
+    const encoded = encodeComponentValue("reviewer", "foo:bar");
+    expect(encoded).toBe("reviewer:foo:bar");
+    const decoded = decodeComponentValue(encoded);
+    expect(decoded.type).toBe("reviewer");
+    expect(decoded.name).toBe("foo:bar");
+  });
+
+  it("round-trips for reviewer type", () => {
+    const encoded = encodeComponentValue("reviewer", "security");
+    expect(decodeComponentValue(encoded)).toEqual({ type: "reviewer", name: "security" });
+  });
+});
+
+describe("buildGroupOptions", () => {
+  it("groups skills and reviewers correctly", () => {
+    const components = [
+      { name: "agent-browser", type: "skill", description: "Browser automation" },
+      { name: "figma-to-code", type: "skill", description: "Figma to code" },
+      { name: "security", type: "reviewer", description: "Security review" },
+    ];
+
+    const { groupOptions, allValues } = buildGroupOptions(components);
+
+    expect(groupOptions["Skills"]).toHaveLength(2);
+    expect(groupOptions["Reviewers"]).toHaveLength(1);
+    expect(groupOptions["Skills"][0]).toEqual({ value: "skill:agent-browser", label: "Browser automation" });
+    expect(groupOptions["Reviewers"][0]).toEqual({ value: "reviewer:security", label: "Security review" });
+    expect(allValues).toEqual(["skill:agent-browser", "skill:figma-to-code", "reviewer:security"]);
+  });
+
+  it("returns empty structures for empty input", () => {
+    const { groupOptions, allValues } = buildGroupOptions([]);
+    expect(groupOptions).toEqual({});
+    expect(allValues).toEqual([]);
   });
 });
