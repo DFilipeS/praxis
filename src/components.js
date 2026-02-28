@@ -132,7 +132,7 @@ export function getSelectedComponents(manifest, templates) {
   for (const { name, type } of allComponents) {
     if (type === "skill") {
       result.skills.push(name);
-    } else if (type === "reviewer") {
+    } else {
       result.reviewers.push(name);
     }
   }

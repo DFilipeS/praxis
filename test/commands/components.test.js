@@ -11,12 +11,18 @@ vi.mock("../../src/manifest.js", async (importOriginal) => {
   return {
     ...actual,
     readManifest: vi.fn(),
+    writeManifest: vi.fn(actual.writeManifest),
   };
+});
+vi.mock("../../src/files.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return { installFile: vi.fn(actual.installFile) };
 });
 
 import * as p from "@clack/prompts";
 import { fetchTemplates } from "../../src/templates.js";
-import { readManifest, hashContent } from "../../src/manifest.js";
+import { readManifest, hashContent, writeManifest } from "../../src/manifest.js";
+import { installFile } from "../../src/files.js";
 import { components } from "../../src/commands/components.js";
 
 let tmpDir;
@@ -225,6 +231,207 @@ describe("components", () => {
     expect(p.log.info).toHaveBeenCalledWith(
       expect.stringContaining("No changes")
     );
+  });
+
+  it("does not count file as added when content already matches", async () => {
+    // Pre-create BROWSER_SKILL with the exact same content as the template
+    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await writeFile(join(tmpDir, BROWSER_SKILL), '---\ndescription: "Browser automation"\n---');
+
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+
+    await components();
+
+    // status === "matched" — filesAdded stays 0, no "file(s) added" in summary
+    expect(p.outro).toHaveBeenCalledWith(expect.not.stringContaining("file(s) added"));
+
+    const raw = await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8");
+    const manifest = JSON.parse(raw);
+    expect(manifest.files[BROWSER_SKILL]).toBeTruthy();
+    expect(manifest.selectedComponents).toEqual({ skills: ["agent-browser"], reviewers: [] });
+  });
+
+  it("installs reviewer component and records in manifest", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    // User adds the security reviewer
+    p.groupMultiselect = vi.fn().mockResolvedValue(["reviewer:security"]);
+
+    await components();
+
+    expect(existsSync(join(tmpDir, SECURITY_REVIEWER))).toBe(true);
+
+    const raw = await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8");
+    const manifest = JSON.parse(raw);
+    expect(manifest.selectedComponents).toEqual({ skills: [], reviewers: ["security"] });
+    expect(manifest.files[SECURITY_REVIEWER]).toBeTruthy();
+  });
+
+  it("shows error and exits on fetchTemplates failure", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    fetchTemplates.mockRejectedValueOnce(new Error("Network error"));
+
+    await expect(components()).rejects.toThrow("process.exit(1)");
+    expect(p.log.error).toHaveBeenCalledWith("Network error");
+  });
+
+  it("blocks path traversal in additions loop", async () => {
+    // 4 levels of ".." are needed to escape tmpDir from inside .agents/skills/agent-browser/
+    const traversalPath = ".agents/skills/agent-browser/../../../../evil";
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [CORE_FILE, "# Core"],
+        [BROWSER_SKILL, '---\ndescription: "Browser automation"\n---'],
+        [traversalPath, "malicious"],
+      ])
+    );
+
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+
+    await components();
+
+    // Traversal path was blocked; the legitimate file was installed
+    expect(existsSync(join(tmpDir, BROWSER_SKILL))).toBe(true);
+  });
+
+  it("blocks path traversal in removals loop", async () => {
+    const traversalPath = ".agents/skills/agent-browser/../../../../evil";
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [CORE_FILE, "# Core"],
+        [BROWSER_SKILL, '---\ndescription: "Browser automation"\n---'],
+        [traversalPath, "malicious"],
+      ])
+    );
+
+    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await writeFile(join(tmpDir, BROWSER_SKILL), '---\ndescription: "Browser automation"\n---');
+
+    readManifest.mockResolvedValue(
+      makeManifest(
+        {
+          [CORE_FILE]: "# Core",
+          [BROWSER_SKILL]: '---\ndescription: "Browser automation"\n---',
+        },
+        { skills: ["agent-browser"], reviewers: [] }
+      )
+    );
+
+    // Deselect agent-browser — triggers removals loop
+    p.groupMultiselect = vi.fn().mockResolvedValue([]);
+
+    await components();
+
+    // Traversal guard prevented touching the evil path; legitimate file was removed
+    expect(existsSync(join(tmpDir, BROWSER_SKILL))).toBe(false);
+  });
+
+  it("removes manifest entry when component file is already gone from disk", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest(
+        {
+          [CORE_FILE]: "# Core",
+          [BROWSER_SKILL]: '---\ndescription: "Browser automation"\n---',
+        },
+        { skills: ["agent-browser"], reviewers: [] }
+      )
+    );
+
+    // BROWSER_SKILL is in manifest but NOT on disk — should silently clean manifest
+    p.groupMultiselect = vi.fn().mockResolvedValue([]);
+
+    await components();
+
+    const raw = await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8");
+    const manifest = JSON.parse(raw);
+    expect(manifest.files[BROWSER_SKILL]).toBeUndefined();
+    expect(manifest.selectedComponents).toEqual({ skills: [], reviewers: [] });
+  });
+
+  it("executes reviewer map callback when reviewer is in current selection", async () => {
+    // Start with a reviewer selected so currentValues includes reviewer:security
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: ["security"] })
+    );
+
+    // No change — same selection returned
+    p.groupMultiselect = vi.fn().mockResolvedValue(["reviewer:security"]);
+
+    await components();
+
+    expect(p.log.info).toHaveBeenCalledWith(expect.stringContaining("No changes"));
+  });
+
+  it("silently ignores writeManifest failure in error catch block", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+
+    // installFile throws — triggers catch block
+    installFile.mockRejectedValueOnce(new Error("disk full"));
+    // writeManifest in catch block also throws — .catch(() => {}) suppresses it
+    writeManifest.mockRejectedValueOnce(new Error("cannot write"));
+
+    // Original error is re-thrown regardless of writeManifest failure
+    await expect(components()).rejects.toThrow("disk full");
+    expect(writeManifest).toHaveBeenCalled();
+  });
+
+  it("cancels on confirm cancel when removing locally modified file", async () => {
+    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await writeFile(join(tmpDir, BROWSER_SKILL), "locally modified content");
+
+    readManifest.mockResolvedValue(
+      makeManifest(
+        {
+          [CORE_FILE]: "# Core",
+          [BROWSER_SKILL]: "original content",
+        },
+        { skills: ["agent-browser"], reviewers: [] }
+      )
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue([]);
+
+    const cancelSymbol = Symbol("cancel");
+    p.confirm = vi.fn().mockResolvedValue(cancelSymbol);
+    p.isCancel = vi.fn((v) => typeof v === "symbol");
+
+    await expect(components()).rejects.toThrow("process.exit(0)");
+    expect(p.cancel).toHaveBeenCalled();
+  });
+
+  it("writes partial manifest state on unexpected error during additions", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+
+    // Make installFile throw to trigger the catch block
+    installFile.mockRejectedValueOnce(new Error("disk full"));
+
+    await expect(components()).rejects.toThrow("disk full");
+
+    // Partial manifest should have been written (selectedComponents reflects the intended new selection)
+    const raw = await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8");
+    const manifest = JSON.parse(raw);
+    expect(manifest.selectedComponents).toEqual({ skills: ["agent-browser"], reviewers: [] });
   });
 
   it("outro when no optional components available", async () => {

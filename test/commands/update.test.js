@@ -478,6 +478,30 @@ describe("update command", () => {
     expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
   });
 
+  it("logs a nudge after update when there are changes and new unselected components", async () => {
+    // Has a file that needs updating AND a new unselected optional component
+    await writeTestFile(".agents/conventions.md", "v1");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("v1") } }),
+      selectedComponents: { skills: [], reviewers: [] },
+    });
+
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "v2"],
+        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+      ])
+    );
+
+    await update();
+
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("new optional component(s) available")
+    );
+    expect(p.outro).toHaveBeenCalledWith(expect.stringContaining("updated"));
+  });
+
   it("does not nudge when there are no new unselected optional components", async () => {
     readManifest.mockResolvedValue({
       ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),

@@ -74,7 +74,7 @@ export async function components() {
   for (const value of selected) {
     const { type, name } = decodeComponentValue(value);
     if (type === "skill") newSelection.skills.push(name);
-    else if (type === "reviewer") newSelection.reviewers.push(name);
+    else newSelection.reviewers.push(name);
   }
 
   // Compute additions and removals
