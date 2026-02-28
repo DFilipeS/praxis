@@ -11,6 +11,7 @@ import {
   readManifest,
   writeManifest,
 } from "../manifest.js";
+import { getComponentForFile, getSelectedComponents } from "../components.js";
 
 export async function update() {
   const projectRoot = process.cwd();
@@ -44,12 +45,34 @@ export async function update() {
   const changedFiles = [];
   const unchangedFiles = [];
 
+  const currentSelection = getSelectedComponents(manifest, templates);
+  const selectedSkillNames = new Set(currentSelection.skills);
+  const selectedReviewerNames = new Set(currentSelection.reviewers);
+
+  // Track new upstream optional components the user hasn't opted into
+  const newUnselectedComponents = new Set();
+
   // Categorize files
   for (const [relativePath, content] of templates) {
     const newHash = hashContent(content);
     const entry = manifest.files[relativePath];
 
     if (!entry) {
+      // New upstream file — check if it belongs to an unselected optional component
+      const component = getComponentForFile(relativePath);
+      if (component) {
+        const isSelected =
+          component.type === "skill"
+            ? selectedSkillNames.has(component.name)
+            : selectedReviewerNames.has(component.name);
+
+        if (!isSelected) {
+          // Don't auto-install — just record that a new optional component exists
+          newUnselectedComponents.add(component.name);
+          continue;
+        }
+      }
+
       newFiles.push({ relativePath, content, hash: newHash });
     } else if (entry.hash !== newHash) {
       changedFiles.push({ relativePath, content, hash: newHash });
@@ -69,6 +92,11 @@ export async function update() {
     changedFiles.length === 0 &&
     removedFiles.length === 0
   ) {
+    if (newUnselectedComponents.size > 0) {
+      p.log.info(
+        `${newUnselectedComponents.size} new optional component(s) available. Run \`praxis select\` to review.`
+      );
+    }
     p.outro("Everything is up to date!");
     return;
   }
@@ -232,6 +260,12 @@ export async function update() {
   if (updated > 0) parts.push(`${pc.yellow(updated)} updated`);
   if (removed > 0) parts.push(`${pc.red(removed)} removed`);
   if (skipped > 0) parts.push(`${pc.dim(skipped)} skipped`);
+
+  if (newUnselectedComponents.size > 0) {
+    p.log.info(
+      `${newUnselectedComponents.size} new optional component(s) available. Run \`praxis select\` to review.`
+    );
+  }
 
   p.outro(`Update complete! ${parts.join(", ")}.`);
 }

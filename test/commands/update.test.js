@@ -413,4 +413,90 @@ describe("update command", () => {
     expect(manifest.files[".agents/a.md"].hash).toBe(hashContent("v2"));
     expect(manifest.updatedAt).not.toBe("2026-01-01T00:00:00Z");
   });
+
+  it("does not install new optional component files that are not selected", async () => {
+    readManifest.mockResolvedValue({
+      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),
+      selectedComponents: { skills: [], reviewers: [] },
+    });
+    await writeTestFile(".agents/conventions.md", "core");
+
+    // Upstream now has a new optional skill that user hasn't selected
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "core"],
+        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+      ])
+    );
+
+    await update();
+
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(false);
+  });
+
+  it("logs a nudge when new optional components are available but not selected", async () => {
+    readManifest.mockResolvedValue({
+      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),
+      selectedComponents: { skills: [], reviewers: [] },
+    });
+    await writeTestFile(".agents/conventions.md", "core");
+
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "core"],
+        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        [".agents/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
+      ])
+    );
+
+    await update();
+
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("new optional component(s) available")
+    );
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("praxis select")
+    );
+  });
+
+  it("installs new optional component files when they are selected", async () => {
+    readManifest.mockResolvedValue({
+      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),
+      selectedComponents: { skills: ["agent-browser"], reviewers: [] },
+    });
+    await writeTestFile(".agents/conventions.md", "core");
+
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "core"],
+        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+      ])
+    );
+
+    await update();
+
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
+  });
+
+  it("does not nudge when there are no new unselected optional components", async () => {
+    readManifest.mockResolvedValue({
+      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),
+      selectedComponents: { skills: ["agent-browser"], reviewers: [] },
+    });
+    await writeTestFile(".agents/conventions.md", "core");
+
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "core"],
+        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+      ])
+    );
+
+    await update();
+
+    const nudgeCalls = p.log.info.mock.calls.filter((args) =>
+      args[0]?.includes?.("new optional component(s)")
+    );
+    expect(nudgeCalls).toHaveLength(0);
+  });
 });
