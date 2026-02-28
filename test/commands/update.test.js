@@ -621,6 +621,87 @@ describe("update command", () => {
     expect(p.log.success).toHaveBeenCalledWith(expect.stringContaining("updated"));
   });
 
+  it("silently removes manifest entry for upstream-removed file belonging to deselected skill", async () => {
+    const SKILL_FILE = ".agents/skills/agent-browser/SKILL.md";
+    await writeTestFile(SKILL_FILE, "old");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        ".agents/conventions.md": { hash: hashContent("core") },
+        [SKILL_FILE]: { hash: hashContent("old") },
+      }),
+      selectedComponents: { skills: [], reviewers: [] },
+    });
+    await writeTestFile(".agents/conventions.md", "core");
+
+    // Upstream no longer has SKILL_FILE (it was removed from Praxis)
+    fetchTemplates.mockResolvedValue(
+      new Map([[".agents/conventions.md", "core"]])
+    );
+
+    await update();
+
+    // No prompt shown — file belongs to a deselected component
+    expect(p.confirm).not.toHaveBeenCalled();
+
+    // Manifest entry silently removed
+    const raw = await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8");
+    const manifest = JSON.parse(raw);
+    expect(manifest.files[SKILL_FILE]).toBeUndefined();
+  });
+
+  it("silently removes manifest entry for upstream-removed file belonging to deselected reviewer", async () => {
+    const REVIEWER_FILE = ".agents/agents/reviewers/security.md";
+    await writeTestFile(REVIEWER_FILE, "old");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        ".agents/conventions.md": { hash: hashContent("core") },
+        [REVIEWER_FILE]: { hash: hashContent("old") },
+      }),
+      selectedComponents: { skills: [], reviewers: [] },
+    });
+    await writeTestFile(".agents/conventions.md", "core");
+
+    fetchTemplates.mockResolvedValue(
+      new Map([[".agents/conventions.md", "core"]])
+    );
+
+    await update();
+
+    expect(p.confirm).not.toHaveBeenCalled();
+    const raw = await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8");
+    const manifest = JSON.parse(raw);
+    expect(manifest.files[REVIEWER_FILE]).toBeUndefined();
+  });
+
+  it("prompts when upstream removes a file belonging to a selected component", async () => {
+    const SKILL_FILE = ".agents/skills/agent-browser/SKILL.md";
+    await writeTestFile(SKILL_FILE, "old");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        ".agents/conventions.md": { hash: hashContent("core") },
+        [SKILL_FILE]: { hash: hashContent("old") },
+      }),
+      selectedComponents: { skills: ["agent-browser"], reviewers: [] },
+    });
+    await writeTestFile(".agents/conventions.md", "core");
+
+    fetchTemplates.mockResolvedValue(
+      new Map([[".agents/conventions.md", "core"]])
+    );
+
+    p.confirm = vi.fn().mockResolvedValue(false); // user keeps the file
+
+    await update();
+
+    // Prompt IS shown — component is selected
+    expect(p.confirm).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining(SKILL_FILE) })
+    );
+  });
+
   it("does not nudge when there are no new unselected optional components", async () => {
     readManifest.mockResolvedValue({
       ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),

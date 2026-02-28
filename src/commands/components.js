@@ -175,7 +175,12 @@ export async function components() {
         delete updatedManifestFiles[relativePath];
         filesRemoved++;
         p.log.success(`${pc.red("removed")} ${relativePath}`);
-        removedDirs.add(dirname(fullPath));
+        // Collect all ancestor dirs up to (but not including) resolvedRoot
+        let dir = dirname(fullPath);
+        while (dir.length > resolvedRoot.length) {
+          removedDirs.add(dir);
+          dir = dirname(dir);
+        }
       }
 
       // Remove empty parent directories — only for actually removed files.
