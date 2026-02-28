@@ -130,6 +130,7 @@ export async function update() {
   let updated = 0;
   let removed = 0;
   let skipped = 0;
+  let manifestDirty = false; // set when manifest entries change without affecting counters
 
   // Handle new files
   for (const { relativePath, content } of newFiles) {
@@ -227,6 +228,21 @@ export async function update() {
 
   // Handle removed files
   for (const relativePath of removedFiles) {
+    // Silently drop manifest entries for deselected optional components —
+    // they were already removed (or never installed) by `praxis components`.
+    const component = getComponentForFile(relativePath);
+    if (component) {
+      const isSelected =
+        component.type === "skill"
+          ? selectedSkillNames.has(component.name)
+          : selectedReviewerNames.has(component.name);
+      if (!isSelected) {
+        delete updatedManifestFiles[relativePath];
+        manifestDirty = true;
+        continue;
+      }
+    }
+
     const fullPath = resolve(projectRoot, relativePath);
     if (!isSafePath(resolvedRoot, fullPath)) {
       continue;
@@ -265,9 +281,10 @@ export async function update() {
   }
 
   // Write manifest whenever files changed, or when new upstream files existed (even if skipped —
-  // their current hashes need recording), or to migrate manifests that predate selectedComponents.
+  // their current hashes need recording), or to migrate manifests that predate selectedComponents,
+  // or when deselected-component entries were silently cleaned from the manifest.
   const needsWrite =
-    added > 0 || updated > 0 || removed > 0 || newFiles.length > 0 || !manifest.selectedComponents;
+    added > 0 || updated > 0 || removed > 0 || newFiles.length > 0 || manifestDirty || !manifest.selectedComponents;
   if (needsWrite) {
     await writeManifest(projectRoot, {
       ...manifest,
