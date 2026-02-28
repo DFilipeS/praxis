@@ -3,7 +3,6 @@ import { join } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { hashFile, readManifest } from "../manifest.js";
-import { discoverOptionalComponents, getSelectedComponents } from "../components.js";
 
 export async function status() {
   const projectRoot = process.cwd();

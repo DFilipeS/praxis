@@ -455,7 +455,7 @@ describe("update command", () => {
       expect.stringContaining("new optional component(s) available")
     );
     expect(p.log.info).toHaveBeenCalledWith(
-      expect.stringContaining("praxis select")
+      expect.stringContaining("praxis components")
     );
   });
 

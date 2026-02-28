@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import * as p from "@clack/prompts";
 import { createPatch } from "diff";
 import pc from "picocolors";
@@ -15,6 +15,7 @@ import { getComponentForFile, getSelectedComponents } from "../components.js";
 
 export async function update() {
   const projectRoot = process.cwd();
+  const resolvedRoot = resolve(projectRoot);
 
   p.intro(pc.bold("Praxis — Update"));
 
@@ -94,7 +95,7 @@ export async function update() {
   ) {
     if (newUnselectedComponents.size > 0) {
       p.log.info(
-        `${newUnselectedComponents.size} new optional component(s) available. Run \`praxis select\` to review.`
+        `${newUnselectedComponents.size} new optional component(s) available. Run \`praxis components\` to review.`
       );
     }
     p.outro("Everything is up to date!");
@@ -123,7 +124,7 @@ export async function update() {
   // Handle new files
   for (const { relativePath, content, hash } of newFiles) {
     const resolvedPath = resolve(projectRoot, relativePath);
-    if (!resolvedPath.startsWith(resolve(projectRoot))) {
+    if (!resolvedPath.startsWith(resolvedRoot + sep)) {
       continue;
     }
 
@@ -138,7 +139,7 @@ export async function update() {
   // Handle changed files
   for (const { relativePath, content, hash } of changedFiles) {
     const resolvedPath = resolve(projectRoot, relativePath);
-    if (!resolvedPath.startsWith(resolve(projectRoot))) {
+    if (!resolvedPath.startsWith(resolvedRoot + sep)) {
       continue;
     }
 
@@ -213,7 +214,7 @@ export async function update() {
     const fullPath = join(projectRoot, relativePath);
 
     const resolvedPath = resolve(projectRoot, relativePath);
-    if (!resolvedPath.startsWith(resolve(projectRoot))) {
+    if (!resolvedPath.startsWith(resolvedRoot + sep)) {
       continue;
     }
 
@@ -263,7 +264,7 @@ export async function update() {
 
   if (newUnselectedComponents.size > 0) {
     p.log.info(
-      `${newUnselectedComponents.size} new optional component(s) available. Run \`praxis select\` to review.`
+      `${newUnselectedComponents.size} new optional component(s) available. Run \`praxis components\` to review.`
     );
   }
 
