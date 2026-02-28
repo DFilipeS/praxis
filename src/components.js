@@ -171,7 +171,7 @@ export function buildGroupOptions(optionalComponents) {
     const groupLabel = type === "skill" ? "Skills" : "Reviewers";
     if (!groupOptions[groupLabel]) groupOptions[groupLabel] = [];
     const value = encodeComponentValue(type, name);
-    groupOptions[groupLabel].push({ value, label: description });
+    groupOptions[groupLabel].push({ value, label: name, hint: description });
     allValues.push(value);
   }
   return { groupOptions, allValues };
