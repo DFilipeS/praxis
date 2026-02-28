@@ -2,7 +2,7 @@
 
 ![Praxis](assets/hero.png)
 
-*From Greek: the process of putting ideas into practice.*
+_From Greek: the process of putting ideas into practice._
 
 A complete AI-assisted development workflow, packaged as portable agent skills and sub-agents. Praxis implements a structured development cycle — from idea to production code to documented learnings — designed to make each cycle of work improve the next. The name reflects what this workflow is about: not just thinking or just doing, but the disciplined cycle of idea → practice → reflection that makes each iteration better than the last.
 
@@ -12,7 +12,7 @@ Inspired by [Every's Compound Engineering guide](https://every.to/guides/compoun
 
 ### Why Praxis?
 
-**Project and technology agnostic.** Praxis is not tied to any language, framework, or tech stack. It works with any codebase — drop it into an Elixir project, a React app, a Rust CLI, or a Rails monolith. The skills describe *how to work*, not *what to work on*.
+**Project and technology agnostic.** Praxis is not tied to any language, framework, or tech stack. It works with any codebase — drop it into an Elixir project, a React app, a Rust CLI, or a Rails monolith. The skills describe _how to work_, not _what to work on_.
 
 **Context window efficient.** Every design decision respects the limited context window of AI agents. Templates are loaded on demand through progressive disclosure, not upfront. Research runs in parallel sub-agents that return summaries instead of polluting the main thread. Shared conventions live in one file, referenced by many. The goal: spend tokens on the real work, not on infrastructure.
 
@@ -38,36 +38,36 @@ brainstorming → planning → implementing → reviewing → retrospective
 
 Core skills implement the full development cycle and are always installed.
 
-| Skill | Description |
-| --- | --- |
-| `brainstorming` | Explore ideas through open-ended conversation before any planning or implementation |
-| `planning` | Turn a brainstormed idea into a concrete, phased implementation plan |
-| `implementing` | Execute a plan step by step, committing meaningful units of work |
-| `reviewing` | Run configurable reviewer agents in parallel; findings are presented, not auto-fixed |
-| `retrospective` | Capture specific learnings from completed work to improve future cycles |
+| Skill           | Description                                                                          |
+| --------------- | ------------------------------------------------------------------------------------ |
+| `brainstorming` | Explore ideas through open-ended conversation before any planning or implementation  |
+| `planning`      | Turn a brainstormed idea into a concrete, phased implementation plan                 |
+| `implementing`  | Execute a plan step by step, committing meaningful units of work                     |
+| `reviewing`     | Run configurable reviewer agents in parallel; findings are presented, not auto-fixed |
+| `retrospective` | Capture specific learnings from completed work to improve future cycles              |
 
 Optional skills are project-specific. Select them during `praxis init` or change your selection anytime with `praxis components`.
 
-| Skill | Description |
-| --- | --- |
+| Skill           | Description                                                                              |
+| --------------- | ---------------------------------------------------------------------------------------- |
 | `agent-browser` | Browser automation via CLI — navigate pages, fill forms, extract data, and test web apps |
-| `figma-to-code` | Fetch Figma designs via MCP and implement them as React components |
-| `mobile-mcp` | Automate iOS simulators and Android emulators for mobile app testing |
+| `figma-to-code` | Fetch Figma designs via MCP and implement them as React components                       |
+| `mobile-mcp`    | Automate iOS simulators and Android emulators for mobile app testing                     |
 
 ### Reviewers
 
 All reviewers are optional. They run in parallel during the reviewing skill. Add project-specific ones or remove built-in ones by editing `.agents/agents/reviewers/`.
 
-| Reviewer | Description |
-| --- | --- |
-| `agent-accessibility` | Ensures code stays readable and navigable for AI agents |
-| `architecture` | Checks for layer violations and design pattern consistency |
-| `code-quality` | Reviews for bugs, logic errors, and general correctness |
-| `data-integrity` | Flags unsafe migrations, missing constraints, and transaction risks |
+| Reviewer              | Description                                                                     |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `agent-accessibility` | Ensures code stays readable and navigable for AI agents                         |
+| `architecture`        | Checks for layer violations and design pattern consistency                      |
+| `code-quality`        | Reviews for bugs, logic errors, and general correctness                         |
+| `data-integrity`      | Flags unsafe migrations, missing constraints, and transaction risks             |
 | `pattern-recognition` | Checks for deviations from established codebase patterns and naming conventions |
-| `performance` | Flags N+1 queries, unnecessary allocations, and performance anti-patterns |
-| `security` | Reviews against OWASP Top 10 and other common vulnerabilities |
-| `simplicity` | Flags over-engineering and unnecessary complexity |
+| `performance`         | Flags N+1 queries, unnecessary allocations, and performance anti-patterns       |
+| `security`            | Reviews against OWASP Top 10 and other common vulnerabilities                   |
+| `simplicity`          | Flags over-engineering and unnecessary complexity                               |
 
 ## Getting Started
 
@@ -197,8 +197,8 @@ All documents (ideas, plans, learnings) share a single tag registry at `.ai-work
 
 Some skills require environment variables to connect to external services:
 
-| Variable        | Required by                  | Description                                                                                                                                                                     |
-| --------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Variable        | Required by     | Description                                                                                                                                                                     |
+| --------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FIGMA_API_KEY` | `figma-to-code` | [Figma personal access token](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens) with read permissions on _File content_ and _Dev resources_ |
 
 ### File templates
