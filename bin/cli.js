@@ -30,6 +30,14 @@ program
   });
 
 program
+  .command("select")
+  .description("Change which optional components are installed")
+  .action(async () => {
+    const { select } = await import("../src/commands/select.js");
+    await select();
+  });
+
+program
   .command("status")
   .description("Show the status of managed Praxis files")
   .action(async () => {
