@@ -1,7 +1,7 @@
 ---
 title: Selective Component Installation
 date: 2026-02-27
-status: planning
+status: done
 tags: [cli, developer-experience, distribution, tooling]
 ---
 
@@ -42,3 +42,5 @@ None — ready for planning.
 
 - .ai-workflow/ideas/20260223-npm-cli-distribution.md (predecessor — explicitly deferred selective installation as v2)
 - .ai-workflow/plans/20260227-selective-component-installation.md
+- .ai-workflow/learnings/20260228-multi-round-reviews-can-contradict-prior-decisions.md
+- .ai-workflow/learnings/20260228-v8-coverage-counts-anonymous-arrow-functions.md

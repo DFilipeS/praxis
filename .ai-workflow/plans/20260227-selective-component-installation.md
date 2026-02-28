@@ -1,7 +1,7 @@
 ---
 title: Selective Component Installation
 date: 2026-02-27
-status: in-progress
+status: done
 ideas:
   - .ai-workflow/ideas/20260227-selective-component-installation.md
 group: selective-component-installation
@@ -131,3 +131,5 @@ None — builds on the existing v1 CLI shipped via the npm-cli-distribution idea
 
 - .ai-workflow/ideas/20260227-selective-component-installation.md
 - .ai-workflow/ideas/20260223-npm-cli-distribution.md
+- .ai-workflow/learnings/20260228-multi-round-reviews-can-contradict-prior-decisions.md
+- .ai-workflow/learnings/20260228-v8-coverage-counts-anonymous-arrow-functions.md
