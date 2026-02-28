@@ -21,6 +21,7 @@ export function isSafePath(resolvedRoot, resolvedPath) {
  *   { status: "written",  hash } — file was written to disk (new or overwritten)
  *   { status: "matched",  hash } — file already existed with identical content
  *   { status: "skipped",  hash } — user chose to keep their existing version
+ *   { status: "cancelled" }      — user cancelled the prompt; no file was written
  */
 export async function installFile(fullPath, relativePath, content) {
   if (existsSync(fullPath)) {
