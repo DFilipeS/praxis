@@ -65,7 +65,7 @@ export async function init() {
     for (const value of selected) {
       const { type, name } = decodeComponentValue(value);
       if (type === "skill") selectedComponents.skills.push(name);
-      else if (type === "reviewer") selectedComponents.reviewers.push(name);
+      else selectedComponents.reviewers.push(name);
     }
   }
 
