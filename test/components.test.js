@@ -301,8 +301,8 @@ describe("buildGroupOptions", () => {
 
     expect(groupOptions["Skills"]).toHaveLength(2);
     expect(groupOptions["Reviewers"]).toHaveLength(1);
-    expect(groupOptions["Skills"][0]).toEqual({ value: "skill:agent-browser", label: "agent-browser", hint: "Browser automation" });
-    expect(groupOptions["Reviewers"][0]).toEqual({ value: "reviewer:security", label: "security", hint: "Security review" });
+    expect(groupOptions["Skills"][0]).toEqual({ value: "skill:agent-browser", label: "agent-browser" });
+    expect(groupOptions["Reviewers"][0]).toEqual({ value: "reviewer:security", label: "security" });
     expect(allValues).toEqual(["skill:agent-browser", "skill:figma-to-code", "reviewer:security"]);
   });
 
