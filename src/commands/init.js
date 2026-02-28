@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, join, resolve, sep } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { fetchTemplates } from "../templates.js";
@@ -12,7 +12,7 @@ import {
   buildGroupOptions,
   decodeComponentValue,
 } from "../components.js";
-import { installFile } from "../files.js";
+import { installFile, isSafePath } from "../files.js";
 
 export async function init() {
   const projectRoot = process.cwd();
@@ -87,7 +87,7 @@ export async function init() {
 
   for (const [relativePath, content] of [...filesToInstall.entries()].sort()) {
     const resolvedPath = resolve(projectRoot, relativePath);
-    if (!resolvedPath.startsWith(resolvedRoot + sep)) {
+    if (!isSafePath(resolvedRoot, resolvedPath)) {
       continue;
     }
 
@@ -95,6 +95,10 @@ export async function init() {
     await mkdir(dirname(fullPath), { recursive: true });
 
     const { status, hash } = await installFile(fullPath, relativePath, content);
+    if (status === "cancelled") {
+      p.cancel("Cancelled.");
+      process.exit(0);
+    }
     manifestFiles[relativePath] = { hash };
     if (status === "skipped") skipped++;
     else installed++;

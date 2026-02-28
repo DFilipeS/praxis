@@ -1,18 +1,19 @@
 import { existsSync } from "node:fs";
 import { mkdir, rm } from "node:fs/promises";
-import { dirname, join, resolve, sep } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { fetchTemplates } from "../templates.js";
 import { isLocallyModified, readManifest, writeManifest } from "../manifest.js";
 import {
   discoverOptionalComponents,
+  encodeComponentValue,
   getComponentFiles,
   getSelectedComponents,
   buildGroupOptions,
   decodeComponentValue,
 } from "../components.js";
-import { installFile } from "../files.js";
+import { installFile, isSafePath } from "../files.js";
 
 export async function components() {
   const projectRoot = process.cwd();
@@ -51,8 +52,8 @@ export async function components() {
 
   const currentSelection = getSelectedComponents(manifest, templates);
   const currentValues = new Set([
-    ...currentSelection.skills.map((n) => `skill:${n}`),
-    ...currentSelection.reviewers.map((n) => `reviewer:${n}`),
+    ...currentSelection.skills.map((n) => encodeComponentValue("skill", n)),
+    ...currentSelection.reviewers.map((n) => encodeComponentValue("reviewer", n)),
   ]);
 
   const { groupOptions, allValues } = buildGroupOptions(optionalComponents);
@@ -100,7 +101,7 @@ export async function components() {
 
       for (const [relativePath, content] of componentFiles) {
         const resolvedPath = resolve(projectRoot, relativePath);
-        if (!resolvedPath.startsWith(resolvedRoot + sep)) {
+        if (!isSafePath(resolvedRoot, resolvedPath)) {
           continue;
         }
 
@@ -108,6 +109,10 @@ export async function components() {
         await mkdir(dirname(fullPath), { recursive: true });
 
         const { status, hash } = await installFile(fullPath, relativePath, content);
+        if (status === "cancelled") {
+          p.cancel("Cancelled.");
+          process.exit(0);
+        }
         updatedManifestFiles[relativePath] = { hash };
         if (status === "written") {
           filesAdded++;
@@ -123,7 +128,7 @@ export async function components() {
 
       for (const [relativePath] of componentFiles) {
         const resolvedPath = resolve(projectRoot, relativePath);
-        if (!resolvedPath.startsWith(resolvedRoot + sep)) {
+        if (!isSafePath(resolvedRoot, resolvedPath)) {
           continue;
         }
 
@@ -164,10 +169,10 @@ export async function components() {
 
       // Remove empty parent directories — reuse the already-fetched componentFiles
       const dirs = new Set(
-        [...componentFiles.keys()].map((f) => dirname(join(projectRoot, f)))
+        [...componentFiles.keys()].map((f) => dirname(resolve(projectRoot, f)))
       );
       for (const dir of [...dirs].sort((a, b) => b.length - a.length)) {
-        if (!dir.startsWith(resolvedRoot + sep)) continue;
+        if (!isSafePath(resolvedRoot, dir)) continue;
         try {
           await rm(dir, { recursive: false });
         } catch {
@@ -181,7 +186,7 @@ export async function components() {
     await writeManifest(projectRoot, {
       ...manifest,
       updatedAt: new Date().toISOString(),
-      selectedComponents: newSelection,
+      selectedComponents: manifest.selectedComponents,
       files: updatedManifestFiles,
     }).catch(() => {});
     throw err;
@@ -198,5 +203,5 @@ export async function components() {
   if (filesAdded > 0) parts.push(`${pc.green(filesAdded)} file(s) added`);
   if (filesRemoved > 0) parts.push(`${pc.red(filesRemoved)} file(s) removed`);
 
-  p.outro(`Done! ${parts.join(", ")}.`);
+  p.outro(parts.length > 0 ? `Done! ${parts.join(", ")}.` : "Done!");
 }

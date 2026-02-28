@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join, resolve, sep } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { createPatch } from "diff";
 import pc from "picocolors";
@@ -12,6 +12,7 @@ import {
   writeManifest,
 } from "../manifest.js";
 import { getComponentForFile, getSelectedComponents } from "../components.js";
+import { installFile, isSafePath } from "../files.js";
 
 export async function update() {
   const projectRoot = process.cwd();
@@ -76,6 +77,15 @@ export async function update() {
 
       newFiles.push({ relativePath, content, hash: newHash });
     } else if (entry.hash !== newHash) {
+      // Skip changed files for deselected optional components
+      const component = getComponentForFile(relativePath);
+      if (component) {
+        const isSelected =
+          component.type === "skill"
+            ? selectedSkillNames.has(component.name)
+            : selectedReviewerNames.has(component.name);
+        if (!isSelected) continue;
+      }
       changedFiles.push({ relativePath, content, hash: newHash });
     } else {
       unchangedFiles.push(relativePath);
@@ -122,24 +132,33 @@ export async function update() {
   let skipped = 0;
 
   // Handle new files
-  for (const { relativePath, content, hash } of newFiles) {
+  for (const { relativePath, content } of newFiles) {
     const resolvedPath = resolve(projectRoot, relativePath);
-    if (!resolvedPath.startsWith(resolvedRoot + sep)) {
+    if (!isSafePath(resolvedRoot, resolvedPath)) {
       continue;
     }
 
     const fullPath = join(projectRoot, relativePath);
     await mkdir(dirname(fullPath), { recursive: true });
-    await writeFile(fullPath, content);
+    const { status, hash } = await installFile(fullPath, relativePath, content);
+    if (status === "cancelled") {
+      p.cancel("Cancelled.");
+      process.exit(0);
+    }
     updatedManifestFiles[relativePath] = { hash };
-    added++;
-    p.log.success(`${pc.green("added")} ${relativePath}`);
+    if (status === "written") {
+      added++;
+      p.log.success(`${pc.green("added")} ${relativePath}`);
+    } else if (status === "skipped") {
+      skipped++;
+      p.log.warn(`${pc.dim("skipped")} ${relativePath}`);
+    }
   }
 
   // Handle changed files
   for (const { relativePath, content, hash } of changedFiles) {
     const resolvedPath = resolve(projectRoot, relativePath);
-    if (!resolvedPath.startsWith(resolvedRoot + sep)) {
+    if (!isSafePath(resolvedRoot, resolvedPath)) {
       continue;
     }
 
@@ -214,7 +233,7 @@ export async function update() {
     const fullPath = join(projectRoot, relativePath);
 
     const resolvedPath = resolve(projectRoot, relativePath);
-    if (!resolvedPath.startsWith(resolvedRoot + sep)) {
+    if (!isSafePath(resolvedRoot, resolvedPath)) {
       continue;
     }
 
@@ -250,11 +269,16 @@ export async function update() {
     }
   }
 
-  await writeManifest(projectRoot, {
-    ...manifest,
-    updatedAt: new Date().toISOString(),
-    files: updatedManifestFiles,
-  });
+  const needsWrite =
+    added > 0 || updated > 0 || removed > 0 || newFiles.length > 0 || !manifest.selectedComponents;
+  if (needsWrite) {
+    await writeManifest(projectRoot, {
+      ...manifest,
+      updatedAt: new Date().toISOString(),
+      selectedComponents: currentSelection,
+      files: updatedManifestFiles,
+    });
+  }
 
   const parts = [];
   if (added > 0) parts.push(`${pc.green(added)} added`);

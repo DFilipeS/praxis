@@ -1,8 +1,17 @@
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
+import { sep } from "node:path";
 import * as p from "@clack/prompts";
 import { createPatch } from "diff";
 import { hashContent } from "./manifest.js";
+
+/**
+ * Returns true if resolvedPath is safely within resolvedRoot.
+ * Guards against path traversal from template-supplied paths.
+ */
+export function isSafePath(resolvedRoot, resolvedPath) {
+  return resolvedPath.startsWith(resolvedRoot + sep);
+}
 
 /**
  * Installs a single file, prompting for conflict resolution if a different
@@ -31,8 +40,7 @@ export async function installFile(fullPath, relativePath, content) {
     });
 
     if (p.isCancel(action)) {
-      p.cancel("Cancelled.");
-      process.exit(0);
+      return { status: "cancelled" };
     }
 
     if (action === "diff") {
@@ -54,8 +62,7 @@ export async function installFile(fullPath, relativePath, content) {
       });
 
       if (p.isCancel(action)) {
-        p.cancel("Cancelled.");
-        process.exit(0);
+        return { status: "cancelled" };
       }
     }
 
