@@ -6,6 +6,11 @@ import { createPatch } from "diff";
 import pc from "picocolors";
 import { fetchTemplates } from "../templates.js";
 import { hashContent, readManifest, writeManifest } from "../manifest.js";
+import {
+  discoverOptionalComponents,
+  getCoreFiles,
+  getComponentFiles,
+} from "../components.js";
 
 export async function init() {
   const projectRoot = process.cwd();
@@ -35,11 +40,59 @@ export async function init() {
 
   s.stop(`Fetched ${templates.size} template files`);
 
+  // Present optional component selection
+  const optionalComponents = discoverOptionalComponents(templates);
+  let selectedComponents = { skills: [], reviewers: [] };
+
+  if (optionalComponents.length > 0) {
+    const groupOptions = {};
+    for (const { name, type, description } of optionalComponents) {
+      const groupLabel = type === "skill" ? "Skills" : "Reviewers";
+      if (!groupOptions[groupLabel]) groupOptions[groupLabel] = [];
+      groupOptions[groupLabel].push({
+        value: `${type}:${name}`,
+        label: description,
+      });
+    }
+
+    const allValues = optionalComponents.map((c) => `${c.type}:${c.name}`);
+
+    const selected = await p.groupMultiselect({
+      message: "Select optional components to install:",
+      options: groupOptions,
+      initialValues: allValues,
+      required: false,
+    });
+
+    if (p.isCancel(selected)) {
+      p.cancel("Cancelled.");
+      process.exit(0);
+    }
+
+    for (const value of selected) {
+      const [type, name] = value.split(":");
+      if (type === "skill") selectedComponents.skills.push(name);
+      else if (type === "reviewer") selectedComponents.reviewers.push(name);
+    }
+  }
+
+  // Build the set of files to install: core files + selected optional component files
+  const filesToInstall = new Map(getCoreFiles(templates));
+  const selectedNames = [
+    ...selectedComponents.skills,
+    ...selectedComponents.reviewers,
+  ];
+  for (const name of selectedNames) {
+    for (const [path, content] of getComponentFiles(templates, name)) {
+      filesToInstall.set(path, content);
+    }
+  }
+
   const manifestFiles = {};
   let installed = 0;
   let skipped = 0;
 
-  for (const [relativePath, content] of [...templates.entries()].sort()) {
+  for (const [relativePath, content] of [...filesToInstall.entries()].sort()) {
     const resolvedPath = resolve(projectRoot, relativePath);
     if (!resolvedPath.startsWith(resolve(projectRoot))) {
       continue;
@@ -127,6 +180,7 @@ export async function init() {
     version: "1.0.0",
     installedAt: now,
     updatedAt: now,
+    selectedComponents,
     files: manifestFiles,
   });
 

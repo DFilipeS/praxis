@@ -35,6 +35,7 @@ beforeEach(async () => {
   p.spinner = vi.fn(() => ({ start: vi.fn(), stop: vi.fn() }));
   p.cancel = vi.fn();
   p.isCancel = vi.fn().mockReturnValue(false);
+  p.groupMultiselect = vi.fn().mockResolvedValue([]);
 
   fetchTemplates.mockResolvedValue(
     new Map([
@@ -254,5 +255,94 @@ describe("init", () => {
     expect(await readFile(join(tmpDir, ".ai-workflow/tags"), "utf-8")).toBe(
       "existing-tag"
     );
+  });
+
+  it("presents groupMultiselect and installs only selected optional components", async () => {
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "# Core"],
+        [".agents/skills/brainstorming/SKILL.md", "# Core skill"],
+        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        [".agents/skills/figma-to-code/SKILL.md", '---\ndescription: "Figma"\n---'],
+        [".agents/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
+      ])
+    );
+
+    // User selects only agent-browser and security
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser", "reviewer:security"]);
+
+    await init();
+
+    // Core files always installed
+    expect(existsSync(join(tmpDir, ".agents/conventions.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, ".agents/skills/brainstorming/SKILL.md"))).toBe(true);
+
+    // Selected optional components installed
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, ".agents/agents/reviewers/security.md"))).toBe(true);
+
+    // Unselected optional component not installed
+    expect(existsSync(join(tmpDir, ".agents/skills/figma-to-code/SKILL.md"))).toBe(false);
+
+    // Manifest includes selectedComponents
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.selectedComponents).toEqual({
+      skills: ["agent-browser"],
+      reviewers: ["security"],
+    });
+  });
+
+  it("installs all components when all selected", async () => {
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "# Core"],
+        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        [".agents/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
+      ])
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser", "reviewer:security"]);
+
+    await init();
+
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, ".agents/agents/reviewers/security.md"))).toBe(true);
+  });
+
+  it("cancels on groupMultiselect cancel", async () => {
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+      ])
+    );
+
+    const cancelSymbol = Symbol("cancel");
+    p.groupMultiselect = vi.fn().mockResolvedValue(cancelSymbol);
+    p.isCancel = vi.fn((v) => typeof v === "symbol");
+
+    await expect(init()).rejects.toThrow("process.exit(0)");
+    expect(p.cancel).toHaveBeenCalled();
+  });
+
+  it("skips groupMultiselect when no optional components exist", async () => {
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "# Core"],
+        [".agents/skills/brainstorming/SKILL.md", "# Core skill"],
+      ])
+    );
+
+    p.groupMultiselect = vi.fn();
+
+    await init();
+
+    expect(p.groupMultiselect).not.toHaveBeenCalled();
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.selectedComponents).toEqual({ skills: [], reviewers: [] });
   });
 });
