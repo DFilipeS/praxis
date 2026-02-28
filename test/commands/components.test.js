@@ -17,7 +17,7 @@ vi.mock("../../src/manifest.js", async (importOriginal) => {
 import * as p from "@clack/prompts";
 import { fetchTemplates } from "../../src/templates.js";
 import { readManifest, hashContent } from "../../src/manifest.js";
-import { select } from "../../src/commands/select.js";
+import { components } from "../../src/commands/components.js";
 
 let tmpDir;
 
@@ -49,7 +49,7 @@ const defaultTemplates = new Map([
 ]);
 
 beforeEach(async () => {
-  tmpDir = await mkdtemp(join(tmpdir(), "praxis-select-test-"));
+  tmpDir = await mkdtemp(join(tmpdir(), "praxis-components-test-"));
   vi.spyOn(process, "cwd").mockReturnValue(tmpDir);
   vi.spyOn(process, "exit").mockImplementation((code) => {
     throw new Error(`process.exit(${code})`);
@@ -83,17 +83,17 @@ afterEach(async () => {
   vi.restoreAllMocks();
 });
 
-describe("select", () => {
+describe("components", () => {
   it("errors if not initialized", async () => {
     readManifest.mockResolvedValue(null);
 
-    await expect(select()).rejects.toThrow("process.exit(1)");
+    await expect(components()).rejects.toThrow("process.exit(1)");
     expect(p.log.error).toHaveBeenCalledWith(
       expect.stringContaining("not initialized")
     );
   });
 
-  it("installs newly added component files", async () => {
+  it("installs newly added component files and reports file count", async () => {
     readManifest.mockResolvedValue(
       makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
     );
@@ -101,7 +101,7 @@ describe("select", () => {
     // User adds agent-browser
     p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
 
-    await select();
+    await components();
 
     expect(existsSync(join(tmpDir, BROWSER_SKILL))).toBe(true);
     expect(await readFile(join(tmpDir, BROWSER_SKILL), "utf-8")).toBe(
@@ -113,9 +113,12 @@ describe("select", () => {
     const manifest = JSON.parse(raw);
     expect(manifest.selectedComponents).toEqual({ skills: ["agent-browser"], reviewers: [] });
     expect(manifest.files[BROWSER_SKILL]).toBeTruthy();
+
+    // Summary reports file count, not component count
+    expect(p.outro).toHaveBeenCalledWith(expect.stringContaining("file(s) added"));
   });
 
-  it("removes deselected component files", async () => {
+  it("removes deselected component files and reports file count", async () => {
     // Start with agent-browser selected and installed
     await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), '---\ndescription: "Browser automation"\n---');
@@ -133,7 +136,7 @@ describe("select", () => {
     // User deselects agent-browser (selects nothing)
     p.groupMultiselect = vi.fn().mockResolvedValue([]);
 
-    await select();
+    await components();
 
     expect(existsSync(join(tmpDir, BROWSER_SKILL))).toBe(false);
 
@@ -141,6 +144,8 @@ describe("select", () => {
     const manifest = JSON.parse(raw);
     expect(manifest.selectedComponents).toEqual({ skills: [], reviewers: [] });
     expect(manifest.files[BROWSER_SKILL]).toBeUndefined();
+
+    expect(p.outro).toHaveBeenCalledWith(expect.stringContaining("file(s) removed"));
   });
 
   it("warns before removing locally modified file", async () => {
@@ -161,7 +166,7 @@ describe("select", () => {
     p.groupMultiselect = vi.fn().mockResolvedValue([]);
     p.confirm = vi.fn().mockResolvedValue(true); // user confirms removal
 
-    await select();
+    await components();
 
     expect(p.confirm).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining("local modifications") })
@@ -186,7 +191,7 @@ describe("select", () => {
     p.groupMultiselect = vi.fn().mockResolvedValue([]);
     p.confirm = vi.fn().mockResolvedValue(false); // user declines removal
 
-    await select();
+    await components();
 
     expect(existsSync(join(tmpDir, BROWSER_SKILL))).toBe(true);
     expect(await readFile(join(tmpDir, BROWSER_SKILL), "utf-8")).toBe(
@@ -203,7 +208,7 @@ describe("select", () => {
     p.groupMultiselect = vi.fn().mockResolvedValue(cancelSymbol);
     p.isCancel = vi.fn((v) => typeof v === "symbol");
 
-    await expect(select()).rejects.toThrow("process.exit(0)");
+    await expect(components()).rejects.toThrow("process.exit(0)");
     expect(p.cancel).toHaveBeenCalled();
   });
 
@@ -215,7 +220,7 @@ describe("select", () => {
     // Same selection as current
     p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
 
-    await select();
+    await components();
 
     expect(p.log.info).toHaveBeenCalledWith(
       expect.stringContaining("No changes")
@@ -234,7 +239,7 @@ describe("select", () => {
       makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
     );
 
-    await select();
+    await components();
 
     expect(p.outro).toHaveBeenCalledWith(
       expect.stringContaining("No optional components available")

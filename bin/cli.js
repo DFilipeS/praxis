@@ -30,11 +30,11 @@ program
   });
 
 program
-  .command("select")
+  .command("components")
   .description("Change which optional components are installed")
   .action(async () => {
-    const { select } = await import("../src/commands/select.js");
-    await select();
+    const { components } = await import("../src/commands/components.js");
+    await components();
   });
 
 program
