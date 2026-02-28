@@ -138,3 +138,40 @@ export function getSelectedComponents(manifest, templates) {
   }
   return result;
 }
+
+/**
+ * Encodes a component type+name into a single string value safe for use as a
+ * multiselect option value.
+ */
+export function encodeComponentValue(type, name) {
+  return `${type}:${name}`;
+}
+
+/**
+ * Decodes a component value string back into { type, name }.
+ * Uses indexOf to correctly handle names that contain colons.
+ */
+export function decodeComponentValue(value) {
+  const colonIndex = value.indexOf(":");
+  return {
+    type: value.slice(0, colonIndex),
+    name: value.slice(colonIndex + 1),
+  };
+}
+
+/**
+ * Builds the groupOptions object and allValues array for p.groupMultiselect
+ * from a list of optional components.
+ */
+export function buildGroupOptions(optionalComponents) {
+  const groupOptions = {};
+  const allValues = [];
+  for (const { name, type, description } of optionalComponents) {
+    const groupLabel = type === "skill" ? "Skills" : "Reviewers";
+    if (!groupOptions[groupLabel]) groupOptions[groupLabel] = [];
+    const value = encodeComponentValue(type, name);
+    groupOptions[groupLabel].push({ value, label: description });
+    allValues.push(value);
+  }
+  return { groupOptions, allValues };
+}
