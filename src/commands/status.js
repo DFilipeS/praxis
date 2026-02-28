@@ -3,6 +3,7 @@ import { join } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { hashFile, readManifest } from "../manifest.js";
+import { discoverOptionalComponents, getSelectedComponents } from "../components.js";
 
 export async function status() {
   const projectRoot = process.cwd();
@@ -53,6 +54,15 @@ export async function status() {
   if (unchanged > 0) parts.push(`${pc.green(unchanged)} unchanged`);
   if (modified > 0) parts.push(`${pc.yellow(modified)} modified`);
   if (missing > 0) parts.push(`${pc.red(missing)} missing`);
+
+  // Show component selection summary if available
+  const selection = manifest.selectedComponents;
+  if (selection) {
+    const selectedCount = selection.skills.length + selection.reviewers.length;
+    p.log.info(
+      `Components: ${selectedCount} optional component(s) selected. Run ${pc.dim("praxis select")} to change.`
+    );
+  }
 
   p.outro(`${files.length} managed files: ${parts.join(", ")}.`);
 }
