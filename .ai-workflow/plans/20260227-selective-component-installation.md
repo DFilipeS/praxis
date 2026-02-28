@@ -1,7 +1,7 @@
 ---
 title: Selective Component Installation
 date: 2026-02-27
-status: ready
+status: in-progress
 ideas:
   - .ai-workflow/ideas/20260227-selective-component-installation.md
 group: selective-component-installation
@@ -111,17 +111,17 @@ Praxis currently installs all components into every project. Project-specific sk
 
 ## Acceptance Criteria
 
-- [ ] `praxis init` presents a grouped multi-select of optional components (skills, reviewers) after fetching templates, with all pre-selected by default.
-- [ ] Only core files and files belonging to selected optional components are installed during `init`.
-- [ ] The manifest includes a `selectedComponents` array after `init`.
-- [ ] Existing manifests without `selectedComponents` are treated as "all selected" — backward compatible.
-- [ ] `praxis select` shows the current selection, allows toggling, installs newly selected component files, and removes deselected component files.
-- [ ] Removing a locally modified component file warns and asks for confirmation.
-- [ ] `praxis update` does not auto-install files for unselected optional components.
-- [ ] `praxis update` logs a nudge when new optional components are available upstream that the user hasn't selected.
-- [ ] `praxis status` shows the count of selected vs total optional components.
-- [ ] All new functionality has tests.
-- [ ] Component names cannot cause path traversal (validated by the convention-based path derivation in `getComponentForFile`).
+- [x] `praxis init` presents a grouped multi-select of optional components (skills, reviewers) after fetching templates, with all pre-selected by default.
+- [x] Only core files and files belonging to selected optional components are installed during `init`.
+- [x] The manifest includes a `selectedComponents` array after `init`.
+- [x] Existing manifests without `selectedComponents` are treated as "all selected" — backward compatible.
+- [x] `praxis components` (renamed from `praxis select`) shows the current selection, allows toggling, installs newly selected component files, and removes deselected component files.
+- [x] Removing a locally modified component file warns and asks for confirmation.
+- [x] `praxis update` does not auto-install files for unselected optional components.
+- [x] `praxis update` logs a nudge when new optional components are available upstream that the user hasn't selected.
+- [x] `praxis status` shows the count of selected optional components.
+- [x] All new functionality has tests.
+- [x] Component names cannot cause path traversal (validated by the convention-based path derivation in `getComponentForFile`).
 
 ## Dependencies
 
