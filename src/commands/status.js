@@ -59,7 +59,7 @@ export async function status() {
   if (selection) {
     const selectedCount = selection.skills.length + selection.reviewers.length;
     p.log.info(
-      `Components: ${selectedCount} optional component(s) selected. Run ${pc.dim("praxis select")} to change.`
+      `Components: ${selectedCount} optional component(s) selected. Run ${pc.dim("praxis components")} to change.`
     );
   }
 
