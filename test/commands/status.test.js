@@ -148,4 +148,47 @@ describe("status", () => {
       expect.stringContaining("1 missing")
     );
   });
+
+  it("shows component count when selectedComponents is in manifest", async () => {
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/conventions.md"), "core");
+
+    readManifest.mockResolvedValue({
+      installedAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+      selectedComponents: {
+        skills: ["agent-browser", "figma-to-code"],
+        reviewers: ["security"],
+      },
+      files: {
+        ".agents/conventions.md": { hash: hashContent("core") },
+      },
+    });
+
+    await status();
+
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("3 optional component(s) selected")
+    );
+  });
+
+  it("does not show component count when selectedComponents is absent", async () => {
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/conventions.md"), "core");
+
+    readManifest.mockResolvedValue({
+      installedAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+      files: {
+        ".agents/conventions.md": { hash: hashContent("core") },
+      },
+    });
+
+    await status();
+
+    const componentInfoCalls = p.log.info.mock.calls.filter((args) =>
+      args[0]?.includes?.("component")
+    );
+    expect(componentInfoCalls).toHaveLength(0);
+  });
 });
