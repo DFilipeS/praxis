@@ -113,20 +113,33 @@ describe("getComponentFiles", () => {
   ]);
 
   it("returns only files for the specified skill", () => {
-    const files = getComponentFiles(templates, "agent-browser");
+    const files = getComponentFiles(templates, "agent-browser", "skill");
     expect(files.size).toBe(2);
     expect(files.has(".agents/skills/agent-browser/SKILL.md")).toBe(true);
     expect(files.has(".agents/skills/agent-browser/references/commands.md")).toBe(true);
   });
 
   it("returns only the reviewer file for a reviewer component", () => {
-    const files = getComponentFiles(templates, "security");
+    const files = getComponentFiles(templates, "security", "reviewer");
     expect(files.size).toBe(1);
     expect(files.has(".agents/agents/reviewers/security.md")).toBe(true);
   });
 
   it("returns empty map for unknown component", () => {
-    expect(getComponentFiles(templates, "nonexistent").size).toBe(0);
+    expect(getComponentFiles(templates, "nonexistent", "skill").size).toBe(0);
+  });
+
+  it("does not match a reviewer when searching for a skill of the same name", () => {
+    const templatesWithConflict = makeTemplates([
+      [".agents/skills/security/SKILL.md", "skill content"],
+      [".agents/agents/reviewers/security.md", "reviewer content"],
+    ]);
+    const skillFiles = getComponentFiles(templatesWithConflict, "security", "skill");
+    const reviewerFiles = getComponentFiles(templatesWithConflict, "security", "reviewer");
+    expect(skillFiles.size).toBe(1);
+    expect(skillFiles.has(".agents/skills/security/SKILL.md")).toBe(true);
+    expect(reviewerFiles.size).toBe(1);
+    expect(reviewerFiles.has(".agents/agents/reviewers/security.md")).toBe(true);
   });
 });
 

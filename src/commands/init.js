@@ -71,12 +71,12 @@ export async function init() {
 
   // Build the set of files to install: core files + selected optional component files
   const filesToInstall = new Map(getCoreFiles(templates));
-  const selectedNames = [
-    ...selectedComponents.skills,
-    ...selectedComponents.reviewers,
+  const selectedComponentList = [
+    ...selectedComponents.skills.map((name) => ({ type: "skill", name })),
+    ...selectedComponents.reviewers.map((name) => ({ type: "reviewer", name })),
   ];
-  for (const name of selectedNames) {
-    for (const [path, content] of getComponentFiles(templates, name)) {
+  for (const { type, name } of selectedComponentList) {
+    for (const [path, content] of getComponentFiles(templates, name, type)) {
       filesToInstall.set(path, content);
     }
   }
@@ -86,12 +86,11 @@ export async function init() {
   let skipped = 0;
 
   for (const [relativePath, content] of [...filesToInstall.entries()].sort()) {
-    const resolvedPath = resolve(projectRoot, relativePath);
-    if (!isSafePath(resolvedRoot, resolvedPath)) {
+    const fullPath = resolve(projectRoot, relativePath);
+    if (!isSafePath(resolvedRoot, fullPath)) {
       continue;
     }
 
-    const fullPath = join(projectRoot, relativePath);
     await mkdir(dirname(fullPath), { recursive: true });
 
     const { status, hash } = await installFile(fullPath, relativePath, content);

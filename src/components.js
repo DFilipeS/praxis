@@ -1,3 +1,4 @@
+// Keep in sync with the core skills in .agents/skills/ in this repository.
 const CORE_SKILLS = new Set([
   "brainstorming",
   "planning",
@@ -39,11 +40,11 @@ export function getComponentForFile(relativePath) {
 /**
  * Returns all files from templates that belong to a specific optional component.
  */
-export function getComponentFiles(templates, componentName) {
+export function getComponentFiles(templates, componentName, componentType) {
   const result = new Map();
   for (const [relativePath, content] of templates) {
     const component = getComponentForFile(relativePath);
-    if (component && component.name === componentName) {
+    if (component && component.name === componentName && component.type === componentType) {
       result.set(relativePath, content);
     }
   }
@@ -68,12 +69,12 @@ export function getCoreFiles(templates) {
  * for every optional component found. Grouped by type (skill before reviewer).
  */
 export function discoverOptionalComponents(templates) {
-  const seen = new Map(); // name+type key → { name, type }
+  const seen = new Map(); // encoded "type:name" key → { name, type }
 
   for (const relativePath of templates.keys()) {
     const component = getComponentForFile(relativePath);
     if (component) {
-      const key = `${component.type}:${component.name}`;
+      const key = encodeComponentValue(component.type, component.name);
       if (!seen.has(key)) {
         seen.set(key, component);
       }

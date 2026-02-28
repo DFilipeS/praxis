@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
-import { mkdir, rm } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { mkdir, rm, rmdir } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { fetchTemplates } from "../templates.js";
@@ -96,20 +96,25 @@ export async function components() {
   try {
     // Handle additions
     for (const value of additions) {
-      const { name } = decodeComponentValue(value);
-      const componentFiles = getComponentFiles(templates, name);
+      const { name, type } = decodeComponentValue(value);
+      const componentFiles = getComponentFiles(templates, name, type);
 
       for (const [relativePath, content] of componentFiles) {
-        const resolvedPath = resolve(projectRoot, relativePath);
-        if (!isSafePath(resolvedRoot, resolvedPath)) {
+        const fullPath = resolve(projectRoot, relativePath);
+        if (!isSafePath(resolvedRoot, fullPath)) {
           continue;
         }
 
-        const fullPath = join(projectRoot, relativePath);
         await mkdir(dirname(fullPath), { recursive: true });
 
         const { status, hash } = await installFile(fullPath, relativePath, content);
         if (status === "cancelled") {
+          await writeManifest(projectRoot, {
+            ...manifest,
+            updatedAt: new Date().toISOString(),
+            selectedComponents: newSelection,
+            files: updatedManifestFiles,
+          }).catch(() => {});
           p.cancel("Cancelled.");
           process.exit(0);
         }
@@ -123,16 +128,15 @@ export async function components() {
 
     // Handle removals
     for (const value of removals) {
-      const { name } = decodeComponentValue(value);
-      const componentFiles = getComponentFiles(templates, name);
+      const { name, type } = decodeComponentValue(value);
+      const componentFiles = getComponentFiles(templates, name, type);
+      const removedDirs = new Set();
 
       for (const [relativePath] of componentFiles) {
-        const resolvedPath = resolve(projectRoot, relativePath);
-        if (!isSafePath(resolvedRoot, resolvedPath)) {
+        const fullPath = resolve(projectRoot, relativePath);
+        if (!isSafePath(resolvedRoot, fullPath)) {
           continue;
         }
-
-        const fullPath = join(projectRoot, relativePath);
 
         if (!existsSync(fullPath)) {
           delete updatedManifestFiles[relativePath];
@@ -151,6 +155,12 @@ export async function components() {
           });
 
           if (p.isCancel(shouldRemove)) {
+            await writeManifest(projectRoot, {
+              ...manifest,
+              updatedAt: new Date().toISOString(),
+              selectedComponents: newSelection,
+              files: updatedManifestFiles,
+            }).catch(() => {});
             p.cancel("Cancelled.");
             process.exit(0);
           }
@@ -165,16 +175,15 @@ export async function components() {
         delete updatedManifestFiles[relativePath];
         filesRemoved++;
         p.log.success(`${pc.red("removed")} ${relativePath}`);
+        removedDirs.add(dirname(fullPath));
       }
 
-      // Remove empty parent directories — reuse the already-fetched componentFiles
-      const dirs = new Set(
-        [...componentFiles.keys()].map((f) => dirname(resolve(projectRoot, f)))
-      );
-      for (const dir of [...dirs].sort((a, b) => b.length - a.length)) {
-        if (!isSafePath(resolvedRoot, dir)) continue;
+      // Remove empty parent directories — only for actually removed files.
+      // These dirs are already known-safe (derived from fullPaths that passed isSafePath).
+      // Process deepest paths first so parents are empty by the time we reach them.
+      for (const dir of [...removedDirs].sort((a, b) => b.length - a.length)) {
         try {
-          await rm(dir, { recursive: false });
+          await rmdir(dir);
         } catch {
           // Directory not empty or already gone — ignore
         }
@@ -186,9 +195,9 @@ export async function components() {
     await writeManifest(projectRoot, {
       ...manifest,
       updatedAt: new Date().toISOString(),
-      selectedComponents: manifest.selectedComponents,
+      selectedComponents: newSelection,
       files: updatedManifestFiles,
-    }).catch(() => {});
+    }).catch((e) => p.log.warn(`Could not save partial state: ${e.message}`));
     throw err;
   }
 

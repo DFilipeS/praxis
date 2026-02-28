@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import { createPatch } from "diff";
 import pc from "picocolors";
@@ -133,12 +133,11 @@ export async function update() {
 
   // Handle new files
   for (const { relativePath, content } of newFiles) {
-    const resolvedPath = resolve(projectRoot, relativePath);
-    if (!isSafePath(resolvedRoot, resolvedPath)) {
+    const fullPath = resolve(projectRoot, relativePath);
+    if (!isSafePath(resolvedRoot, fullPath)) {
       continue;
     }
 
-    const fullPath = join(projectRoot, relativePath);
     await mkdir(dirname(fullPath), { recursive: true });
     const { status, hash } = await installFile(fullPath, relativePath, content);
     if (status === "cancelled") {
@@ -157,12 +156,10 @@ export async function update() {
 
   // Handle changed files
   for (const { relativePath, content, hash } of changedFiles) {
-    const resolvedPath = resolve(projectRoot, relativePath);
-    if (!isSafePath(resolvedRoot, resolvedPath)) {
+    const fullPath = resolve(projectRoot, relativePath);
+    if (!isSafePath(resolvedRoot, fullPath)) {
       continue;
     }
-
-    const fullPath = join(projectRoot, relativePath);
 
     const locallyModified = existsSync(fullPath)
       ? await isLocallyModified(projectRoot, relativePath, manifest)
@@ -230,10 +227,8 @@ export async function update() {
 
   // Handle removed files
   for (const relativePath of removedFiles) {
-    const fullPath = join(projectRoot, relativePath);
-
-    const resolvedPath = resolve(projectRoot, relativePath);
-    if (!isSafePath(resolvedRoot, resolvedPath)) {
+    const fullPath = resolve(projectRoot, relativePath);
+    if (!isSafePath(resolvedRoot, fullPath)) {
       continue;
     }
 
@@ -269,6 +264,8 @@ export async function update() {
     }
   }
 
+  // Write manifest whenever files changed, or when new upstream files existed (even if skipped —
+  // their current hashes need recording), or to migrate manifests that predate selectedComponents.
   const needsWrite =
     added > 0 || updated > 0 || removed > 0 || newFiles.length > 0 || !manifest.selectedComponents;
   if (needsWrite) {

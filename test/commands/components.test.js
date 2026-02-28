@@ -388,9 +388,11 @@ describe("components", () => {
 
     await expect(components()).rejects.toThrow("process.exit(0)");
     expect(p.cancel).toHaveBeenCalled();
+    // Partial state should be saved before exit so already-written files are tracked
+    expect(writeManifest).toHaveBeenCalled();
   });
 
-  it("silently ignores writeManifest failure in error catch block", async () => {
+  it("logs warning when writeManifest fails in error catch block", async () => {
     readManifest.mockResolvedValue(
       makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
     );
@@ -399,12 +401,13 @@ describe("components", () => {
 
     // installFile throws — triggers catch block
     installFile.mockRejectedValueOnce(new Error("disk full"));
-    // writeManifest in catch block also throws — .catch(() => {}) suppresses it
+    // writeManifest in catch block also throws — warning is logged
     writeManifest.mockRejectedValueOnce(new Error("cannot write"));
 
     // Original error is re-thrown regardless of writeManifest failure
     await expect(components()).rejects.toThrow("disk full");
     expect(writeManifest).toHaveBeenCalled();
+    expect(p.log.warn).toHaveBeenCalledWith(expect.stringContaining("Could not save partial state"));
   });
 
   it("cancels on confirm cancel when removing locally modified file", async () => {
@@ -429,6 +432,86 @@ describe("components", () => {
 
     await expect(components()).rejects.toThrow("process.exit(0)");
     expect(p.cancel).toHaveBeenCalled();
+    // Partial state should be saved before exit
+    expect(writeManifest).toHaveBeenCalled();
+  });
+
+  it("swallows writeManifest failure on additions cancel", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+    installFile.mockResolvedValueOnce({ status: "cancelled" });
+    writeManifest.mockRejectedValueOnce(new Error("write failed"));
+
+    // writeManifest rejection is swallowed; process.exit(0) is still thrown
+    await expect(components()).rejects.toThrow("process.exit(0)");
+    expect(p.cancel).toHaveBeenCalled();
+  });
+
+  it("swallows writeManifest failure on removals cancel", async () => {
+    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await writeFile(join(tmpDir, BROWSER_SKILL), "locally modified content");
+
+    readManifest.mockResolvedValue(
+      makeManifest(
+        {
+          [CORE_FILE]: "# Core",
+          [BROWSER_SKILL]: "original content",
+        },
+        { skills: ["agent-browser"], reviewers: [] }
+      )
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue([]);
+
+    const cancelSymbol = Symbol("cancel");
+    p.confirm = vi.fn().mockResolvedValue(cancelSymbol);
+    p.isCancel = vi.fn((v) => typeof v === "symbol");
+    writeManifest.mockRejectedValueOnce(new Error("write failed"));
+
+    // writeManifest rejection is swallowed; process.exit(0) is still thrown
+    await expect(components()).rejects.toThrow("process.exit(0)");
+    expect(p.cancel).toHaveBeenCalled();
+  });
+
+  it("sorts and removes empty directories after removing multi-file component", async () => {
+    const BROWSER_HELPER = ".agents/skills/agent-browser/helpers/utils.md";
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [CORE_FILE, "# Core"],
+        [BROWSER_SKILL, '---\ndescription: "Browser automation"\n---'],
+        [BROWSER_HELPER, "# Utils"],
+        [FIGMA_SKILL, '---\ndescription: "Figma to code"\n---'],
+        [SECURITY_REVIEWER, '---\ndescription: "Security review"\n---'],
+      ])
+    );
+
+    await mkdir(join(tmpDir, ".agents/skills/agent-browser/helpers"), { recursive: true });
+    await writeFile(join(tmpDir, BROWSER_SKILL), '---\ndescription: "Browser automation"\n---');
+    await writeFile(join(tmpDir, BROWSER_HELPER), "# Utils");
+
+    readManifest.mockResolvedValue(
+      makeManifest(
+        {
+          [CORE_FILE]: "# Core",
+          [BROWSER_SKILL]: '---\ndescription: "Browser automation"\n---',
+          [BROWSER_HELPER]: "# Utils",
+        },
+        { skills: ["agent-browser"], reviewers: [] }
+      )
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue([]);
+
+    await components();
+
+    expect(existsSync(join(tmpDir, BROWSER_SKILL))).toBe(false);
+    expect(existsSync(join(tmpDir, BROWSER_HELPER))).toBe(false);
+    // Nested helper dir removed first, then parent dir
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/helpers"))).toBe(false);
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser"))).toBe(false);
   });
 
   it("writes partial manifest state on unexpected error during additions", async () => {
@@ -443,11 +526,11 @@ describe("components", () => {
 
     await expect(components()).rejects.toThrow("disk full");
 
-    // Partial manifest should have been written preserving the original selectedComponents
-    // (catch block keeps manifest.selectedComponents so the field matches the last known-good state)
+    // Partial manifest should have been written with the user's intended selection
+    // so the manifest reflects what was being applied, not the old stale state
     const raw = await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8");
     const manifest = JSON.parse(raw);
-    expect(manifest.selectedComponents).toEqual({ skills: [], reviewers: [] });
+    expect(manifest.selectedComponents).toEqual({ skills: ["agent-browser"], reviewers: [] });
   });
 
   it("outro when no optional components available", async () => {
