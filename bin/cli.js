@@ -45,6 +45,36 @@ program
     await status();
   });
 
+const tool = program
+  .command("tool")
+  .description("Manage tool-specific configuration (Claude Code, Cursor, Opencode)");
+
+tool
+  .command("add")
+  .description("Enable tool adapter(s) and generate their config files")
+  .argument("[names...]", "tool names (e.g., claude-code cursor)")
+  .action(async (names) => {
+    const { toolAdd } = await import("../src/commands/tool.js");
+    await toolAdd(names);
+  });
+
+tool
+  .command("remove")
+  .description("Remove tool adapter(s) and their config files")
+  .argument("<names...>", "tool names to remove")
+  .action(async (names) => {
+    const { toolRemove } = await import("../src/commands/tool.js");
+    await toolRemove(names);
+  });
+
+tool
+  .command("list")
+  .description("List all available tool adapters and their status")
+  .action(async () => {
+    const { toolList } = await import("../src/commands/tool.js");
+    await toolList();
+  });
+
 program.parseAsync().catch((err) => {
   console.error(`Error: ${err.message}`);
   process.exit(1);
