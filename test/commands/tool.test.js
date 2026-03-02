@@ -13,9 +13,17 @@ vi.mock("../../src/manifest.js", async (importOriginal) => {
     writeManifest: vi.fn(actual.writeManifest),
   };
 });
+vi.mock("../../src/adapters.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getAdapter: vi.fn(actual.getAdapter),
+  };
+});
 
 import * as p from "@clack/prompts";
 import { readManifest, writeManifest, hashContent } from "../../src/manifest.js";
+import { getAdapter } from "../../src/adapters.js";
 import { toolAdd, toolRemove, toolList } from "../../src/commands/tool.js";
 
 let tmpDir;
@@ -453,5 +461,58 @@ describe("toolList", () => {
     expect(p.outro).toHaveBeenCalledWith(
       expect.stringContaining("3 tool adapter(s)")
     );
+  });
+});
+
+describe("security guards", () => {
+  it("skips entries with path traversal in writeAdapterFiles", async () => {
+    readManifest.mockResolvedValue(makeManifest());
+
+    // Return an adapter whose transform produces a traversal path
+    getAdapter.mockReturnValueOnce({
+      displayName: "Evil",
+      files: ["../../evil.json"],
+      transform: () => [
+        { path: "../../evil.json", type: "file", content: "{}\n" },
+      ],
+    });
+
+    await toolAdd(["cursor"]);
+
+    // The traversal path should not have been written
+    expect(existsSync(join(tmpDir, "../../evil.json"))).toBe(false);
+  });
+
+  it("skips entries with path traversal in removeAdapterFiles", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ enabledTools: ["cursor"] })
+    );
+
+    getAdapter.mockReturnValueOnce({
+      displayName: "Evil",
+      files: ["../../evil.json"],
+      transform: () => [
+        { path: "../../evil.json", type: "file", content: "{}\n" },
+      ],
+    });
+
+    await toolRemove(["cursor"]);
+
+    // Should complete without error
+    expect(p.outro).toHaveBeenCalled();
+  });
+
+  it("returns 0 when adapter is null in removeAdapterFiles", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ enabledTools: ["cursor"] })
+    );
+
+    // Simulate a stale/unknown adapter name in manifest
+    getAdapter.mockReturnValueOnce(null);
+
+    await toolRemove(["cursor"]);
+
+    // Should complete without crashing
+    expect(p.outro).toHaveBeenCalled();
   });
 });

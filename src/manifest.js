@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -29,7 +29,7 @@ export async function readManifest(projectRoot) {
 
 export async function writeManifest(projectRoot, manifest) {
   const filePath = join(projectRoot, MANIFEST_FILE);
-  const tmpPath = filePath + ".tmp";
+  const tmpPath = filePath + ".tmp." + randomUUID();
   await writeFile(tmpPath, JSON.stringify(manifest, null, 2) + "\n");
   await rename(tmpPath, filePath);
 }

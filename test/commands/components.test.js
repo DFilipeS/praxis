@@ -21,11 +21,19 @@ vi.mock("../../src/files.js", async (importOriginal) => {
     isSafePath: actual.isSafePath,
   };
 });
+vi.mock("../../src/adapters.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    regenerateToolConfigs: vi.fn(actual.regenerateToolConfigs),
+  };
+});
 
 import * as p from "@clack/prompts";
 import { fetchTemplates } from "../../src/templates.js";
 import { readManifest, hashContent, writeManifest } from "../../src/manifest.js";
 import { installFile } from "../../src/files.js";
+import { regenerateToolConfigs } from "../../src/adapters.js";
 import { components } from "../../src/commands/components.js";
 
 let tmpDir;
@@ -617,5 +625,23 @@ describe("components", () => {
     // No MCP config message
     const infoCalls = p.log.info.mock.calls.map((c) => c[0]);
     expect(infoCalls.every((msg) => !msg.includes("Updated MCP config"))).toBe(true);
+  });
+
+  it("warns but continues when regenerateToolConfigs throws", async () => {
+    readManifest.mockResolvedValue({
+      ...makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] }),
+      enabledTools: ["cursor"],
+    });
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+    regenerateToolConfigs.mockRejectedValueOnce(new Error("disk full"));
+
+    await components();
+
+    expect(p.log.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Could not regenerate tool configs")
+    );
+    // Outro should still be shown
+    expect(p.outro).toHaveBeenCalled();
   });
 });

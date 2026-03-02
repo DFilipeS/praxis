@@ -298,11 +298,15 @@ export async function update() {
 
   // Regenerate tool configs if any tools are enabled and files changed
   if (needsWrite) {
-    const regenerated = await regenerateToolConfigs(projectRoot, updatedManifest);
-    if (regenerated.length > 0) {
-      p.log.info(
-        `Updated MCP config for ${regenerated.join(", ")}`
-      );
+    try {
+      const regenerated = await regenerateToolConfigs(projectRoot, updatedManifest);
+      if (regenerated.length > 0) {
+        p.log.info(
+          `Updated MCP config for ${regenerated.join(", ")}`
+        );
+      }
+    } catch (e) {
+      p.log.warn(`Could not regenerate tool configs: ${e.message}`);
     }
   }
 

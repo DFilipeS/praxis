@@ -99,6 +99,21 @@ describe("collectMcpConfig", () => {
     expect(result).toEqual({});
   });
 
+  it("skips skills with path traversal in name", async () => {
+    const manifest = {
+      selectedComponents: { skills: ["../../etc"], reviewers: [] },
+    };
+
+    const result = await collectMcpConfig(tmpDir, manifest);
+    expect(result).toEqual({});
+  });
+
+  it("returns empty when selectedComponents has no skills property", async () => {
+    const manifest = { selectedComponents: {} };
+    const result = await collectMcpConfig(tmpDir, manifest);
+    expect(result).toEqual({});
+  });
+
   it("skips skills without mcp.json", async () => {
     await mkdir(join(tmpDir, ".agents/skills/agent-browser"), {
       recursive: true,

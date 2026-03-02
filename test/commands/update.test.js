@@ -13,6 +13,13 @@ vi.mock("../../src/manifest.js", async (importOriginal) => {
     readManifest: vi.fn(),
   };
 });
+vi.mock("../../src/adapters.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    regenerateToolConfigs: vi.fn(actual.regenerateToolConfigs),
+  };
+});
 
 import * as p from "@clack/prompts";
 import { fetchTemplates } from "../../src/templates.js";
@@ -22,6 +29,7 @@ import {
   writeManifest,
   isLocallyModified,
 } from "../../src/manifest.js";
+import { regenerateToolConfigs } from "../../src/adapters.js";
 import { update } from "../../src/commands/update.js";
 
 let tmpDir;
@@ -787,5 +795,32 @@ describe("update command", () => {
 
     const infoCalls = p.log.info.mock.calls.map((c) => c[0]);
     expect(infoCalls.every((msg) => !msg.includes("Updated MCP config"))).toBe(true);
+  });
+
+  it("warns but continues when regenerateToolConfigs throws", async () => {
+    // File on disk matches old manifest hash (not locally modified)
+    await writeTestFile(".agents/conventions.md", "old core");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        ".agents/conventions.md": { hash: hashContent("old core") },
+      }),
+      selectedComponents: { skills: [], reviewers: [] },
+      enabledTools: ["cursor"],
+    });
+
+    // Template has new content — triggers an update
+    fetchTemplates.mockResolvedValue(
+      new Map([[".agents/conventions.md", "new core"]])
+    );
+
+    regenerateToolConfigs.mockRejectedValueOnce(new Error("disk full"));
+
+    await update();
+
+    expect(p.log.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Could not regenerate tool configs")
+    );
+    expect(p.outro).toHaveBeenCalled();
   });
 });
