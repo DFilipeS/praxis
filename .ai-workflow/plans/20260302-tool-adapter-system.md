@@ -1,7 +1,7 @@
 ---
 title: Tool Adapter System
 date: 2026-03-02
-status: in-progress
+status: done
 ideas:
   - .ai-workflow/ideas/20260302-tool-adapter-system.md
 group: tool-adapter-system
@@ -89,3 +89,7 @@ See [Tool Adapter System idea](.ai-workflow/ideas/20260302-tool-adapter-system.m
 
 - [Tool Adapter System idea](.ai-workflow/ideas/20260302-tool-adapter-system.md)
 - [Selective Component Installation plan](.ai-workflow/plans/20260227-selective-component-installation.md)
+- [existsSync returns false for dangling symlinks](.ai-workflow/learnings/20260302-existssync-false-for-dangling-symlinks.md)
+- [Write the manifest first to declare intent](.ai-workflow/learnings/20260302-manifest-first-writes-for-crash-recovery.md)
+- [Use Object.create(null) for untrusted JSON](.ai-workflow/learnings/20260302-object-create-null-for-untrusted-json.md)
+- [Validate resolved paths to prevent traversal](.ai-workflow/learnings/20260302-path-traversal-through-dynamic-path-join.md)

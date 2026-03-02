@@ -1,7 +1,7 @@
 ---
 title: Tool Adapter System
 date: 2026-03-02
-status: planning
+status: done
 tags: [cli, developer-experience, portability, tooling]
 ---
 
@@ -39,3 +39,7 @@ Extend the Praxis CLI to act as a tool adapter layer. The CLI asks which AI tool
 
 - [Selective Component Installation](20260227-selective-component-installation.md) — the tool adapter could integrate with the component selection flow (e.g., only generate MCP configs for installed optional skills)
 - [Tool Adapter System plan](../plans/20260302-tool-adapter-system.md)
+- [existsSync returns false for dangling symlinks](../learnings/20260302-existssync-false-for-dangling-symlinks.md)
+- [Write the manifest first to declare intent](../learnings/20260302-manifest-first-writes-for-crash-recovery.md)
+- [Use Object.create(null) for untrusted JSON](../learnings/20260302-object-create-null-for-untrusted-json.md)
+- [Validate resolved paths to prevent traversal](../learnings/20260302-path-traversal-through-dynamic-path-join.md)
