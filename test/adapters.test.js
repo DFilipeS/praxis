@@ -1,11 +1,13 @@
+import { existsSync } from "node:fs";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readlink, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
   collectMcpConfig,
   getAdapter,
   listAdapters,
+  regenerateToolConfigs,
 } from "../src/adapters.js";
 
 describe("collectMcpConfig", () => {
@@ -291,5 +293,163 @@ describe("opencode adapter transform", () => {
     const parsed = JSON.parse(results[0].content);
 
     expect(parsed.mcp.test.command).toEqual(["cmd"]);
+  });
+
+  it("handles entries without env", () => {
+    const mcpConfig = {
+      test: { command: "cmd", args: ["-y"] },
+    };
+
+    const results = adapter.transform(mcpConfig);
+    const parsed = JSON.parse(results[0].content);
+
+    expect(parsed.mcp.test.environment).toEqual({});
+    expect(parsed.mcp.test.command).toEqual(["cmd", "-y"]);
+  });
+});
+
+describe("env var transform edge cases", () => {
+  it("passes through non-string, non-array, non-object values unchanged", () => {
+    const adapter = getAdapter("cursor");
+    const mcpConfig = {
+      test: {
+        command: "cmd",
+        args: [],
+        env: { KEY: "${VAR}" },
+        includeTools: ["tool1", "tool2"],
+        timeout: 30,
+        enabled: true,
+      },
+    };
+
+    const results = adapter.transform(mcpConfig);
+    const parsed = JSON.parse(results[0].content);
+
+    // Numbers and booleans pass through unchanged
+    expect(parsed.mcpServers.test.timeout).toBe(30);
+    expect(parsed.mcpServers.test.enabled).toBe(true);
+    // Arrays of strings are transformed
+    expect(parsed.mcpServers.test.includeTools).toEqual(["tool1", "tool2"]);
+  });
+});
+
+describe("regenerateToolConfigs", () => {
+  let tmpDir;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), "adapters-regen-test-"));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("returns empty array when no tools are enabled", async () => {
+    const manifest = { enabledTools: [], selectedComponents: { skills: [], reviewers: [] } };
+    const result = await regenerateToolConfigs(tmpDir, manifest);
+    expect(result).toEqual([]);
+  });
+
+  it("returns empty array when enabledTools is absent", async () => {
+    const manifest = { selectedComponents: { skills: [], reviewers: [] } };
+    const result = await regenerateToolConfigs(tmpDir, manifest);
+    expect(result).toEqual([]);
+  });
+
+  it("creates symlink for claude-code when CLAUDE.md is missing", async () => {
+    const manifest = {
+      enabledTools: ["claude-code"],
+      selectedComponents: { skills: [], reviewers: [] },
+    };
+
+    await regenerateToolConfigs(tmpDir, manifest);
+
+    const linkTarget = await readlink(join(tmpDir, "CLAUDE.md"));
+    expect(linkTarget).toBe("AGENTS.md");
+  });
+
+  it("skips symlink creation when CLAUDE.md already exists", async () => {
+    await writeFile(join(tmpDir, "CLAUDE.md"), "existing");
+
+    const manifest = {
+      enabledTools: ["claude-code"],
+      selectedComponents: { skills: [], reviewers: [] },
+    };
+
+    await regenerateToolConfigs(tmpDir, manifest);
+
+    // Should still be a regular file
+    const content = await readFile(join(tmpDir, "CLAUDE.md"), "utf-8");
+    expect(content).toBe("existing");
+  });
+
+  it("writes MCP config files for cursor", async () => {
+    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await writeFile(
+      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      JSON.stringify({ figma: { command: "npx", args: ["-y", "figma"], env: { K: "${V}" } } })
+    );
+
+    const manifest = {
+      enabledTools: ["cursor"],
+      selectedComponents: { skills: ["figma-to-code"], reviewers: [] },
+    };
+
+    await regenerateToolConfigs(tmpDir, manifest);
+
+    const content = JSON.parse(await readFile(join(tmpDir, ".cursor/mcp.json"), "utf-8"));
+    expect(content.mcpServers.figma.env.K).toBe("${env:V}");
+  });
+
+  it("merges mcp key into existing opencode.json", async () => {
+    await writeFile(
+      join(tmpDir, "opencode.json"),
+      JSON.stringify({ provider: { default: "anthropic" } }, null, 2) + "\n"
+    );
+
+    const manifest = {
+      enabledTools: ["opencode"],
+      selectedComponents: { skills: [], reviewers: [] },
+    };
+
+    await regenerateToolConfigs(tmpDir, manifest);
+
+    const content = JSON.parse(await readFile(join(tmpDir, "opencode.json"), "utf-8"));
+    expect(content.provider).toEqual({ default: "anthropic" });
+    expect(content.mcp).toBeTruthy();
+  });
+
+  it("overwrites opencode.json when existing file has invalid JSON", async () => {
+    await writeFile(join(tmpDir, "opencode.json"), "not json {");
+
+    const manifest = {
+      enabledTools: ["opencode"],
+      selectedComponents: { skills: [], reviewers: [] },
+    };
+
+    await regenerateToolConfigs(tmpDir, manifest);
+
+    const content = JSON.parse(await readFile(join(tmpDir, "opencode.json"), "utf-8"));
+    expect(content.mcp).toBeTruthy();
+  });
+
+  it("skips unknown adapter names", async () => {
+    const manifest = {
+      enabledTools: ["nonexistent"],
+      selectedComponents: { skills: [], reviewers: [] },
+    };
+
+    const result = await regenerateToolConfigs(tmpDir, manifest);
+    expect(result).toEqual([]);
+  });
+
+  it("returns list of regenerated tool names", async () => {
+    const manifest = {
+      enabledTools: ["cursor", "opencode"],
+      selectedComponents: { skills: [], reviewers: [] },
+    };
+
+    const result = await regenerateToolConfigs(tmpDir, manifest);
+    expect(result).toEqual(["cursor", "opencode"]);
   });
 });

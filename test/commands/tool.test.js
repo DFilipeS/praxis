@@ -246,6 +246,69 @@ describe("toolAdd", () => {
     expect(manifest.enabledTools).toContain("cursor");
     expect(manifest.enabledTools).toContain("opencode");
   });
+
+  it("reports no tools selected when interactive returns empty", async () => {
+    readManifest.mockResolvedValue(makeManifest());
+    p.multiselect = vi.fn().mockResolvedValue([]);
+
+    await toolAdd([]);
+
+    expect(p.outro).toHaveBeenCalledWith(
+      expect.stringContaining("No tools selected")
+    );
+  });
+
+  it("overwrites existing CLAUDE.md symlink", async () => {
+    const { symlink } = await import("node:fs/promises");
+    await symlink("OLD_TARGET.md", join(tmpDir, "CLAUDE.md"));
+
+    readManifest.mockResolvedValue(makeManifest());
+
+    await toolAdd(["claude-code"]);
+
+    const linkTarget = await readlink(join(tmpDir, "CLAUDE.md"));
+    expect(linkTarget).toBe("AGENTS.md");
+  });
+
+  it("overwrites existing opencode.json with invalid JSON via writeAdapterFiles", async () => {
+    await writeFile(join(tmpDir, "opencode.json"), "not json {");
+
+    readManifest.mockResolvedValue(makeManifest());
+
+    await toolAdd(["opencode"]);
+
+    const content = JSON.parse(
+      await readFile(join(tmpDir, "opencode.json"), "utf-8")
+    );
+    expect(content.mcp).toBeTruthy();
+  });
+
+  it("merges mcp into existing opencode.json via writeAdapterFiles", async () => {
+    await writeFile(
+      join(tmpDir, "opencode.json"),
+      JSON.stringify({ provider: { default: "anthropic" } }, null, 2) + "\n"
+    );
+
+    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await writeFile(
+      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      JSON.stringify({ figma: { command: "npx", args: [], env: {} } })
+    );
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        selectedComponents: { skills: ["figma-to-code"], reviewers: [] },
+      })
+    );
+
+    await toolAdd(["opencode"]);
+
+    const content = JSON.parse(
+      await readFile(join(tmpDir, "opencode.json"), "utf-8")
+    );
+    expect(content.provider).toEqual({ default: "anthropic" });
+    expect(content.mcp.figma).toBeTruthy();
+  });
 });
 
 describe("toolRemove", () => {
@@ -311,6 +374,47 @@ describe("toolRemove", () => {
     );
     expect(content.provider).toEqual({ default: "anthropic" });
     expect(content.mcp).toBeUndefined();
+  });
+
+  it("deletes opencode.json entirely when only mcp key exists", async () => {
+    await writeFile(
+      join(tmpDir, "opencode.json"),
+      JSON.stringify({ mcp: { figma: {} } }, null, 2) + "\n"
+    );
+
+    readManifest.mockResolvedValue(
+      makeManifest({ enabledTools: ["opencode"] })
+    );
+
+    await toolRemove(["opencode"]);
+
+    expect(existsSync(join(tmpDir, "opencode.json"))).toBe(false);
+  });
+
+  it("removes opencode.json when it contains invalid JSON", async () => {
+    await writeFile(join(tmpDir, "opencode.json"), "not json {");
+
+    readManifest.mockResolvedValue(
+      makeManifest({ enabledTools: ["opencode"] })
+    );
+
+    await toolRemove(["opencode"]);
+
+    expect(existsSync(join(tmpDir, "opencode.json"))).toBe(false);
+  });
+
+  it("handles removal when files are already gone", async () => {
+    // No files on disk, but tool is in enabledTools
+    readManifest.mockResolvedValue(
+      makeManifest({ enabledTools: ["cursor"] })
+    );
+
+    await toolRemove(["cursor"]);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.enabledTools).not.toContain("cursor");
   });
 
   it("removes CLAUDE.md symlink and .mcp.json", async () => {

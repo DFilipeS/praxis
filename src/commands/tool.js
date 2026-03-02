@@ -33,22 +33,21 @@ async function writeAdapterFiles(projectRoot, entries) {
 
     if (entry.type === "symlink") {
       // Handle symlink (CLAUDE.md → AGENTS.md)
-      if (existsSync(fullPath)) {
-        try {
-          const stats = await lstat(fullPath);
-          if (stats.isSymbolicLink()) {
-            // Already a symlink — overwrite it
-            await rm(fullPath);
-          } else {
-            // Regular file exists — warn and skip
-            p.log.warn(
-              `${entry.path} already exists and is not a symlink — skipping. Remove it manually if you want Praxis to manage it.`
-            );
-            continue;
-          }
-        } catch {
+      // Use lstat (not existsSync) to detect dangling symlinks too
+      try {
+        const stats = await lstat(fullPath);
+        if (stats.isSymbolicLink()) {
+          // Already a symlink — overwrite it
+          await rm(fullPath);
+        } else {
+          // Regular file exists — warn and skip
+          p.log.warn(
+            `${entry.path} already exists and is not a symlink — skipping. Remove it manually if you want Praxis to manage it.`
+          );
           continue;
         }
+      } catch {
+        // Path does not exist — proceed to create
       }
 
       await symlink(entry.target, fullPath);
@@ -89,8 +88,6 @@ async function writeAdapterFiles(projectRoot, entries) {
  */
 async function removeAdapterFiles(projectRoot, adapterName, mcpConfig) {
   const adapter = getAdapter(adapterName);
-  if (!adapter) return 0;
-
   const entries = adapter.transform(mcpConfig);
   let removed = 0;
 
@@ -133,7 +130,7 @@ async function removeAdapterFiles(projectRoot, adapterName, mcpConfig) {
   }
 
   // Clean up empty parent directories
-  for (const dir of [...removedDirs].sort((a, b) => b.length - a.length)) {
+  for (const dir of removedDirs) {
     try {
       await rmdir(dir);
     } catch {
