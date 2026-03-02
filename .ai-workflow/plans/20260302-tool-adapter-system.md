@@ -67,18 +67,18 @@ See [Tool Adapter System idea](.ai-workflow/ideas/20260302-tool-adapter-system.m
 
 ## Acceptance Criteria
 
-- [ ] `praxis tool add claude-code` creates a `CLAUDE.md → AGENTS.md` symlink and generates a valid `.mcp.json` at the project root containing merged MCP servers from all selected skills, with correct env var syntax
-- [ ] If `CLAUDE.md` already exists and is not a symlink to `AGENTS.md`, the user is warned and the symlink is skipped
-- [ ] `praxis tool add cursor` generates a valid `.cursor/mcp.json` with `${env:VAR}` env var syntax
-- [ ] `praxis tool add opencode` generates a valid `opencode.json` (or merges `mcp` key into existing) with `{env:VAR}` syntax, array `command`, `environment` key, and `type: "local"`
-- [ ] `praxis tool remove <name>` deletes the generated files and removes the tool from the manifest
-- [ ] `praxis tool list` shows all available adapters and their enabled/disabled status
-- [ ] Running `praxis tool add` with no arguments shows an interactive multi-select
-- [ ] Changing components (adding/removing a skill with `mcp.json`) automatically regenerates configs for all enabled tools
-- [ ] Running `praxis update` regenerates tool configs when upstream `mcp.json` files change
-- [ ] The `enabledTools` manifest field is backward-compatible with existing installs
-- [ ] All new code has corresponding tests
-- [ ] README documents the feature with usage examples
+- [x] `praxis tool add claude-code` creates a `CLAUDE.md → AGENTS.md` symlink and generates a valid `.mcp.json` at the project root containing merged MCP servers from all selected skills, with correct env var syntax
+- [x] If `CLAUDE.md` already exists and is not a symlink to `AGENTS.md`, the user is warned and the symlink is skipped
+- [x] `praxis tool add cursor` generates a valid `.cursor/mcp.json` with `${env:VAR}` env var syntax
+- [x] `praxis tool add opencode` generates a valid `opencode.json` (or merges `mcp` key into existing) with `{env:VAR}` syntax, array `command`, `environment` key, and `type: "local"`
+- [x] `praxis tool remove <name>` deletes the generated files and removes the tool from the manifest
+- [x] `praxis tool list` shows all available adapters and their enabled/disabled status
+- [x] Running `praxis tool add` with no arguments shows an interactive multi-select
+- [x] Changing components (adding/removing a skill with `mcp.json`) automatically regenerates configs for all enabled tools
+- [x] Running `praxis update` regenerates tool configs when upstream `mcp.json` files change
+- [x] The `enabledTools` manifest field is backward-compatible with existing installs
+- [x] All new code has corresponding tests
+- [x] README documents the feature with usage examples
 
 ## Dependencies
 
