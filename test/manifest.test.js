@@ -63,12 +63,32 @@ describe('readManifest', () => {
   });
 
   it('returns parsed JSON when .praxis-manifest.json exists', async () => {
-    const manifest = { version: 1, files: {} };
+    const manifest = { version: 1, files: {}, enabledTools: [] };
     await writeFile(
       join(tmpDir, '.praxis-manifest.json'),
       JSON.stringify(manifest),
     );
     expect(await readManifest(tmpDir)).toEqual(manifest);
+  });
+
+  it('defaults enabledTools to [] for old manifests lacking the field', async () => {
+    const manifest = { version: 1, files: {} };
+    await writeFile(
+      join(tmpDir, '.praxis-manifest.json'),
+      JSON.stringify(manifest),
+    );
+    const result = await readManifest(tmpDir);
+    expect(result.enabledTools).toEqual([]);
+  });
+
+  it('preserves existing enabledTools when present', async () => {
+    const manifest = { version: 1, files: {}, enabledTools: ['claude-code'] };
+    await writeFile(
+      join(tmpDir, '.praxis-manifest.json'),
+      JSON.stringify(manifest),
+    );
+    const result = await readManifest(tmpDir);
+    expect(result.enabledTools).toEqual(['claude-code']);
   });
 
   it('returns null when file does not exist', async () => {
@@ -102,9 +122,16 @@ describe('writeManifest', () => {
   });
 
   it('can be read back with readManifest', async () => {
-    const manifest = { version: 1, files: { 'a.txt': { hash: 'abc' } } };
+    const manifest = { version: 1, files: { 'a.txt': { hash: 'abc' } }, enabledTools: [] };
     await writeManifest(tmpDir, manifest);
     expect(await readManifest(tmpDir)).toEqual(manifest);
+  });
+
+  it('persists enabledTools field', async () => {
+    const manifest = { version: 1, files: {}, enabledTools: ['cursor', 'opencode'] };
+    await writeManifest(tmpDir, manifest);
+    const result = await readManifest(tmpDir);
+    expect(result.enabledTools).toEqual(['cursor', 'opencode']);
   });
 });
 

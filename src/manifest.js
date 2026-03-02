@@ -16,7 +16,11 @@ export async function hashFile(filePath) {
 export async function readManifest(projectRoot) {
   try {
     const raw = await readFile(join(projectRoot, MANIFEST_FILE), "utf-8");
-    return JSON.parse(raw);
+    const manifest = JSON.parse(raw);
+    if (!manifest.enabledTools) {
+      manifest.enabledTools = [];
+    }
+    return manifest;
   } catch (err) {
     if (err.code === "ENOENT") return null;
     throw err;
