@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
-import { lstat, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { join } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 
 /**
  * Reads all per-skill mcp.json files for currently selected components and
@@ -29,7 +28,12 @@ export async function collectMcpConfig(projectRoot, manifest) {
       continue;
     }
 
-    const servers = JSON.parse(raw);
+    let servers;
+    try {
+      servers = JSON.parse(raw);
+    } catch {
+      continue;
+    }
     Object.assign(merged, servers);
   }
 

@@ -82,6 +82,21 @@ describe("collectMcpConfig", () => {
     });
   });
 
+  it("skips skills with malformed mcp.json", async () => {
+    await mkdir(join(tmpDir, ".agents/skills/bad-skill"), { recursive: true });
+    await writeFile(
+      join(tmpDir, ".agents/skills/bad-skill/mcp.json"),
+      "not valid json {"
+    );
+
+    const manifest = {
+      selectedComponents: { skills: ["bad-skill"], reviewers: [] },
+    };
+
+    const result = await collectMcpConfig(tmpDir, manifest);
+    expect(result).toEqual({});
+  });
+
   it("skips skills without mcp.json", async () => {
     await mkdir(join(tmpDir, ".agents/skills/agent-browser"), {
       recursive: true,

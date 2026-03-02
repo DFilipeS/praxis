@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, rm, rmdir, symlink, lstat, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, rm, rmdir, symlink, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
