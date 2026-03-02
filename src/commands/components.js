@@ -14,6 +14,7 @@ import {
   decodeComponentValue,
 } from "../components.js";
 import { installFile, isSafePath } from "../files.js";
+import { regenerateToolConfigs } from "../adapters.js";
 
 export async function components() {
   const projectRoot = process.cwd();
@@ -206,12 +207,22 @@ export async function components() {
     throw err;
   }
 
-  await writeManifest(projectRoot, {
+  const updatedManifest = {
     ...manifest,
     updatedAt: new Date().toISOString(),
     selectedComponents: newSelection,
     files: updatedManifestFiles,
-  });
+  };
+
+  await writeManifest(projectRoot, updatedManifest);
+
+  // Regenerate tool configs if any tools are enabled
+  const regenerated = await regenerateToolConfigs(projectRoot, updatedManifest);
+  if (regenerated.length > 0) {
+    p.log.info(
+      `Updated MCP config for ${regenerated.join(", ")}`
+    );
+  }
 
   const parts = [];
   if (filesAdded > 0) parts.push(`${pc.green(filesAdded)} file(s) added`);

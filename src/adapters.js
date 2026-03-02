@@ -1,4 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { lstat, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { join } from "node:path";
 
 /**
@@ -145,4 +147,59 @@ export function listAdapters() {
     displayName: adapter.displayName,
     files: adapter.files,
   }));
+}
+
+/**
+ * Regenerates tool config files for all enabled tools.
+ * Used as a post-change hook after component or update changes.
+ * Returns the list of tool names that were regenerated.
+ */
+export async function regenerateToolConfigs(projectRoot, manifest) {
+  const enabledTools = manifest.enabledTools || [];
+  if (enabledTools.length === 0) return [];
+
+  const mcpConfig = await collectMcpConfig(projectRoot, manifest);
+  const regenerated = [];
+
+  for (const toolName of enabledTools) {
+    const adapter = getAdapter(toolName);
+    if (!adapter) continue;
+
+    const entries = adapter.transform(mcpConfig);
+
+    for (const entry of entries) {
+      const fullPath = resolve(projectRoot, entry.path);
+
+      if (entry.type === "symlink") {
+        // Only create if missing — don't touch existing symlinks on regenerate
+        if (!existsSync(fullPath)) {
+          try {
+            await symlink(entry.target, fullPath);
+          } catch {
+            // Skip if can't create
+          }
+        }
+        continue;
+      }
+
+      await mkdir(dirname(fullPath), { recursive: true });
+
+      if (entry.mergeKey && existsSync(fullPath)) {
+        try {
+          const existing = JSON.parse(await readFile(fullPath, "utf-8"));
+          const newContent = JSON.parse(entry.content);
+          existing[entry.mergeKey] = newContent[entry.mergeKey];
+          await writeFile(fullPath, JSON.stringify(existing, null, 2) + "\n");
+        } catch {
+          await writeFile(fullPath, entry.content);
+        }
+      } else {
+        await writeFile(fullPath, entry.content);
+      }
+    }
+
+    regenerated.push(toolName);
+  }
+
+  return regenerated;
 }

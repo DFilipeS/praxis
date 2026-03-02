@@ -552,4 +552,70 @@ describe("components", () => {
     );
     expect(p.groupMultiselect).not.toHaveBeenCalled();
   });
+
+  it("regenerates tool configs when adding a skill with mcp.json and tools are enabled", async () => {
+    const FIGMA_MCP = ".agents/skills/figma-to-code/mcp.json";
+    const figmaMcp = JSON.stringify({
+      figma: {
+        command: "npx",
+        args: ["-y", "figma-mcp"],
+        env: { KEY: "${MY_KEY}" },
+      },
+    });
+
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [CORE_FILE, "# Core"],
+        [FIGMA_SKILL, '---\ndescription: "Figma to code"\n---'],
+        [FIGMA_MCP, figmaMcp],
+        [BROWSER_SKILL, '---\ndescription: "Browser automation"\n---'],
+        [SECURITY_REVIEWER, '---\ndescription: "Security review"\n---'],
+      ])
+    );
+
+    // Set up figma mcp.json on disk (it gets installed by the component add)
+    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/skills/figma-to-code/mcp.json"), figmaMcp);
+
+    // cursor is already enabled
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+    // Override to add enabledTools
+    readManifest.mockResolvedValue({
+      ...makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] }),
+      enabledTools: ["cursor"],
+    });
+
+    // User adds figma-to-code
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:figma-to-code"]);
+
+    await components();
+
+    // .cursor/mcp.json should have been regenerated
+    expect(existsSync(join(tmpDir, ".cursor/mcp.json"))).toBe(true);
+    const cursorConfig = JSON.parse(
+      await readFile(join(tmpDir, ".cursor/mcp.json"), "utf-8")
+    );
+    expect(cursorConfig.mcpServers.figma).toBeTruthy();
+    expect(cursorConfig.mcpServers.figma.env.KEY).toBe("${env:MY_KEY}");
+
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("Updated MCP config for cursor")
+    );
+  });
+
+  it("does not regenerate tool configs when no tools are enabled", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] })
+    );
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+
+    await components();
+
+    // No MCP config message
+    const infoCalls = p.log.info.mock.calls.map((c) => c[0]);
+    expect(infoCalls.every((msg) => !msg.includes("Updated MCP config"))).toBe(true);
+  });
 });
