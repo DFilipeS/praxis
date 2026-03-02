@@ -723,4 +723,69 @@ describe("update command", () => {
     );
     expect(nudgeCalls).toHaveLength(0);
   });
+
+  it("regenerates tool configs when mcp.json changes and tools are enabled", async () => {
+    const oldMcp = JSON.stringify({
+      figma: { command: "npx", args: ["-y", "figma-old"], env: { KEY: "${K}" } },
+    });
+    const newMcp = JSON.stringify({
+      figma: { command: "npx", args: ["-y", "figma-new"], env: { KEY: "${K}" } },
+    });
+
+    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile(".agents/skills/figma-to-code/SKILL.md", "---\ndescription: Figma\n---");
+    await writeTestFile(".agents/skills/figma-to-code/mcp.json", oldMcp);
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        ".agents/conventions.md": { hash: hashContent("core") },
+        ".agents/skills/figma-to-code/SKILL.md": { hash: hashContent("---\ndescription: Figma\n---") },
+        ".agents/skills/figma-to-code/mcp.json": { hash: hashContent(oldMcp) },
+      }),
+      selectedComponents: { skills: ["figma-to-code"], reviewers: [] },
+      enabledTools: ["cursor"],
+    });
+
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        [".agents/conventions.md", "core"],
+        [".agents/skills/figma-to-code/SKILL.md", "---\ndescription: Figma\n---"],
+        [".agents/skills/figma-to-code/mcp.json", newMcp],
+      ])
+    );
+
+    await update();
+
+    // .cursor/mcp.json should have been regenerated with new config
+    expect(existsSync(join(tmpDir, ".cursor/mcp.json"))).toBe(true);
+    const cursorConfig = JSON.parse(
+      await readFile(join(tmpDir, ".cursor/mcp.json"), "utf-8")
+    );
+    expect(cursorConfig.mcpServers.figma.args).toContain("-y");
+
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("Updated MCP config for cursor")
+    );
+  });
+
+  it("does not regenerate tool configs when no tools are enabled", async () => {
+    await writeTestFile(".agents/conventions.md", "core");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        ".agents/conventions.md": { hash: hashContent("old core") },
+      }),
+      selectedComponents: { skills: [], reviewers: [] },
+      enabledTools: [],
+    });
+
+    fetchTemplates.mockResolvedValue(
+      new Map([[".agents/conventions.md", "core"]])
+    );
+
+    await update();
+
+    const infoCalls = p.log.info.mock.calls.map((c) => c[0]);
+    expect(infoCalls.every((msg) => !msg.includes("Updated MCP config"))).toBe(true);
+  });
 });

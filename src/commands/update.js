@@ -13,6 +13,7 @@ import {
 } from "../manifest.js";
 import { getComponentForFile, getSelectedComponents } from "../components.js";
 import { installFile, isSafePath } from "../files.js";
+import { regenerateToolConfigs } from "../adapters.js";
 
 export async function update() {
   const projectRoot = process.cwd();
@@ -285,13 +286,24 @@ export async function update() {
   // or when deselected-component entries were silently cleaned from the manifest.
   const needsWrite =
     added > 0 || updated > 0 || removed > 0 || newFiles.length > 0 || manifestDirty || !manifest.selectedComponents;
+  const updatedManifest = {
+    ...manifest,
+    updatedAt: new Date().toISOString(),
+    selectedComponents: currentSelection,
+    files: updatedManifestFiles,
+  };
   if (needsWrite) {
-    await writeManifest(projectRoot, {
-      ...manifest,
-      updatedAt: new Date().toISOString(),
-      selectedComponents: currentSelection,
-      files: updatedManifestFiles,
-    });
+    await writeManifest(projectRoot, updatedManifest);
+  }
+
+  // Regenerate tool configs if any tools are enabled and files changed
+  if (needsWrite) {
+    const regenerated = await regenerateToolConfigs(projectRoot, updatedManifest);
+    if (regenerated.length > 0) {
+      p.log.info(
+        `Updated MCP config for ${regenerated.join(", ")}`
+      );
+    }
   }
 
   const parts = [];
