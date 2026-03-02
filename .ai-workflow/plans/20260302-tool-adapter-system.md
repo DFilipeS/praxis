@@ -1,7 +1,7 @@
 ---
 title: Tool Adapter System
 date: 2026-03-02
-status: ready
+status: in-progress
 ideas:
   - .ai-workflow/ideas/20260302-tool-adapter-system.md
 group: tool-adapter-system
