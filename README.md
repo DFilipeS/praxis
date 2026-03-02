@@ -1,6 +1,6 @@
 # Praxis
 
-![Praxis](assets/hero.png)
+![Praxis](assets/hero-linkedin.png)
 
 _From Greek: the process of putting ideas into practice._
 
@@ -200,6 +200,33 @@ Some skills require environment variables to connect to external services:
 | Variable        | Required by     | Description                                                                                                                                                                     |
 | --------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FIGMA_API_KEY` | `figma-to-code` | [Figma personal access token](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens) with read permissions on _File content_ and _Dev resources_ |
+
+### Tool Adapters
+
+Praxis uses Amp Code's format natively (reads `AGENTS.md` and per-skill `mcp.json` files). To use Praxis with other AI coding tools, generate their configuration files with the `praxis tool` command:
+
+```bash
+# Enable one or more tools
+npx github:DFilipeS/praxis tool add claude-code cursor opencode
+
+# Remove a tool's config files
+npx github:DFilipeS/praxis tool remove cursor
+
+# See available adapters and which are enabled
+npx github:DFilipeS/praxis tool list
+```
+
+**Supported tools:**
+
+| Tool         | What it generates                                                                 |
+| ------------ | --------------------------------------------------------------------------------- |
+| `claude-code`| `CLAUDE.md` → `AGENTS.md` symlink + `.mcp.json` at project root                  |
+| `cursor`     | `.cursor/mcp.json` with `${env:VAR}` env var syntax                               |
+| `opencode`   | `opencode.json` with `{env:VAR}` syntax, merged `command` array, `type: "local"` |
+
+Generated MCP configs contain env var _references_ (e.g., `${FIGMA_API_KEY}`), not secrets — they are safe to commit so the whole team benefits.
+
+When you add or remove components with `praxis components`, or update with `praxis update`, the tool configs are automatically regenerated for all enabled tools.
 
 ### File templates
 
