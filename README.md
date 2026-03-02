@@ -1,6 +1,6 @@
 # Praxis
 
-![Praxis](assets/hero-linkedin.png)
+![Praxis](assets/hero.png)
 
 _From Greek: the process of putting ideas into practice._
 
@@ -97,6 +97,14 @@ npx github:DFilipeS/praxis update
 ```
 
 The update command fetches the latest files from the Praxis repo's main branch, applies changes, and prompts you before overwriting any files you've locally modified.
+
+To change which optional components (skills and reviewers) are installed:
+
+```bash
+npx github:DFilipeS/praxis components
+```
+
+This opens an interactive multi-select where you can toggle optional skills (like `agent-browser`, `figma-to-code`, `mobile-mcp`) and reviewers. Core skills are always installed and cannot be removed. If any tool adapters are enabled, their MCP configs are automatically regenerated to reflect the new selection.
 
 To check the status of managed files:
 
@@ -218,11 +226,11 @@ npx github:DFilipeS/praxis tool list
 
 **Supported tools:**
 
-| Tool         | What it generates                                                                 |
-| ------------ | --------------------------------------------------------------------------------- |
-| `claude-code`| `CLAUDE.md` → `AGENTS.md` symlink + `.mcp.json` at project root                  |
-| `cursor`     | `.cursor/mcp.json` with `${env:VAR}` env var syntax                               |
-| `opencode`   | `opencode.json` with `{env:VAR}` syntax, merged `command` array, `type: "local"` |
+| Tool          | What it generates                                                                |
+| ------------- | -------------------------------------------------------------------------------- |
+| `claude-code` | `CLAUDE.md` → `AGENTS.md` symlink + `.mcp.json` at project root                  |
+| `cursor`      | `.cursor/mcp.json` with `${env:VAR}` env var syntax                              |
+| `opencode`    | `opencode.json` with `{env:VAR}` syntax, merged `command` array, `type: "local"` |
 
 Generated MCP configs contain env var _references_ (e.g., `${FIGMA_API_KEY}`), not secrets — they are safe to commit so the whole team benefits.
 
