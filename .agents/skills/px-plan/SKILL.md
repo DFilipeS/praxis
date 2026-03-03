@@ -1,6 +1,6 @@
 ---
-name: planning
-description: "Creates concrete implementation plans from brainstormed ideas. Use when ready to turn an idea into actionable steps — after brainstorming, before implementation."
+name: px-plan
+description: "Creates concrete implementation plans from brainstormed ideas. Use when ready to turn an idea into actionable steps — after px-brainstorm, before implementation."
 argument-hint: "path to idea file(s), e.g. .ai-workflow/ideas/20260222-offline-first-sync.md"
 ---
 
@@ -10,7 +10,7 @@ Turn a brainstormed idea into one or more concrete, actionable implementation pl
 
 ## Prerequisites
 
-Every plan **must** be linked to one or more idea files from `.ai-workflow/ideas/`. If the user hasn't brainstormed yet, direct them to use the brainstorming skill first.
+Every plan **must** be linked to one or more idea files from `.ai-workflow/ideas/`. If the user hasn't brainstormed yet, direct them to use the px-brainstorm skill first.
 
 ## How a session works
 
@@ -18,7 +18,7 @@ Every plan **must** be linked to one or more idea files from `.ai-workflow/ideas
 
 If `$ARGUMENTS` is provided, treat it as the path(s) to idea file(s) and read them. Otherwise, ask the user which idea(s) they want to plan. Read the referenced idea files from `.ai-workflow/ideas/` to understand the problem, core idea, insights, and open questions.
 
-Review the idea thoroughly before proceeding. If open questions from the brainstorming phase are blockers, resolve them with the user now.
+Review the idea thoroughly before proceeding. If open questions from the px-brainstorm phase are blockers, resolve them with the user now.
 
 ### 2. Research
 

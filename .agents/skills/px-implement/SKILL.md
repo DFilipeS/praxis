@@ -1,5 +1,5 @@
 ---
-name: implementing
+name: px-implement
 description: "Executes an implementation plan by writing code. Use when ready to implement a plan that has been brainstormed, planned, and approved."
 argument-hint: "path to plan file, e.g. .ai-workflow/plans/20260222-offline-first-sync-phase-1.md"
 ---
@@ -54,7 +54,7 @@ If any criteria are not met, discuss with the user whether to address them now o
 
 ### 5. Run automated review
 
-Once implementation is complete and acceptance criteria are verified, invoke the **reviewing** skill to run all configured reviewers against the changed files.
+Once implementation is complete and acceptance criteria are verified, invoke the **px-review** skill to run all configured reviewers against the changed files.
 
 Present the review findings to the user. Fix any issues the user approves.
 
@@ -62,7 +62,7 @@ Present the review findings to the user. Fix any issues the user approves.
 
 After implementation and review are complete:
 - Update the plan's acceptance criteria checkboxes to reflect final state
-- Leave the plan's `status` as `in-progress` (the retrospective skill will set it to `done`)
+- Leave the plan's `status` as `in-progress` (the px-retrospective skill will set it to `done`)
 
 ## Git conventions
 
@@ -77,4 +77,4 @@ Commits should tell a story to reviewers (AI or human). It is fine to have multi
 - **Stop on ambiguity.** If a step is unclear, ask. Don't interpret creatively.
 - **Don't over-engineer.** Implement exactly what the plan says. No extra features, no "while we're here" improvements.
 - **Test as you go.** Run relevant tests after each step, not just at the end.
-- **Don't skip the review.** Always run the reviewing skill after implementation.
+- **Don't skip the review.** Always run the px-review skill after implementation.

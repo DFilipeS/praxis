@@ -1,5 +1,5 @@
 ---
-name: brainstorming
+name: px-brainstorm
 description: "Facilitates idea exploration through conversation. Use when starting a new project, feature, or exploring solutions — before any planning or implementation."
 argument-hint: "topic or problem to explore"
 ---

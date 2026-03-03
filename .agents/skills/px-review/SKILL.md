@@ -1,5 +1,5 @@
 ---
-name: reviewing
+name: px-review
 description: "Runs automated code reviews using configurable reviewer agents. Use during or after implementation to check code quality, security, and best practices."
 argument-hint: "file paths or directories to review, or 'staged' for staged git changes"
 ---
