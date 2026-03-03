@@ -66,5 +66,5 @@ After capturing learnings:
 - **Prioritize specificity over completeness.** Three sharp, actionable learnings are worth more than ten vague observations.
 - **Optimize for future scanning.** The knowledge-reviewer agent will search these files. Clear titles, accurate tags, and concrete recommendations make that search effective.
 - **Don't force learnings.** If the work went smoothly and there's nothing notable, a single "pattern" learning capturing what worked is fine. Not every retrospective needs to uncover problems.
-- **Challenge vague reflections.** If the user says "the px-plan was bad," ask why specifically. Turn feelings into concrete, documented insights.
+- **Challenge vague reflections.** If the user says "the planning was bad," ask why specifically. Turn feelings into concrete, documented insights.
 - **Keep learnings standalone.** Each file should make sense without reading the full plan or idea. Include enough context in the "Context" section.

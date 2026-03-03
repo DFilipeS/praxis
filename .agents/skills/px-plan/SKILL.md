@@ -1,6 +1,6 @@
 ---
 name: px-plan
-description: "Creates concrete implementation plans from brainstormed ideas. Use when ready to turn an idea into actionable steps — after px-brainstorm, before implementation."
+description: "Creates concrete implementation plans from brainstormed ideas. Use when ready to turn an idea into actionable steps — after px-brainstorm, before px-implement."
 argument-hint: "path to idea file(s), e.g. .ai-workflow/ideas/20260222-offline-first-sync.md"
 ---
 
