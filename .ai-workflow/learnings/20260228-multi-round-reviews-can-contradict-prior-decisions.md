@@ -4,7 +4,7 @@ date: 2026-02-28
 category: anti-pattern
 plans:
   - .ai-workflow/plans/20260227-selective-component-installation.md
-tags: [reviewing, workflow, ai-agents]
+tags: [px-review, workflow, ai-agents]
 ---
 
 # Multi-round reviews can contradict prior deliberate decisions

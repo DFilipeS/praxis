@@ -32,7 +32,7 @@ Praxis currently installs all components into every project. Project-specific sk
 1. **Create the component registry (`src/components.js`)** — Only **core** components are hardcoded. Optional components are discovered dynamically at runtime from the fetched templates `Map` using directory conventions.
 
    **What's hardcoded — a `CORE_SKILLS` set:**
-   `brainstorming`, `planning`, `implementing`, `reviewing`, `retrospective`
+   `px-brainstorm`, `px-plan`, `px-implement`, `px-review`, `px-retrospective`
 
    Everything else is derived at runtime by scanning the templates `Map`:
    - A file matching `.agents/skills/{name}/**` where `{name}` is **not** in `CORE_SKILLS` → optional skill component named `{name}`.
