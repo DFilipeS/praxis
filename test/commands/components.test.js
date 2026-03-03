@@ -545,7 +545,7 @@ describe("components", () => {
     fetchTemplates.mockResolvedValue(
       new Map([
         [CORE_FILE, "# Core"],
-        [".agents/skills/brainstorming/SKILL.md", "# Core skill"],
+        [".agents/skills/px-brainstorm/SKILL.md", "# Core skill"],
       ])
     );
 

@@ -4,7 +4,7 @@ This repository contains a portable AI-assisted development workflow. It is a co
 
 ## What this project is
 
-Praxis defines a full development cycle: brainstorming → planning → implementing → reviewing → retrospective. Each phase is implemented as a skill (`.agents/skills/`) with supporting sub-agents (`.agents/agents/`).
+Praxis defines a full development cycle: px-brainstorm → px-plan → px-implement → px-review → px-retrospective. Each phase is implemented as a skill (`.agents/skills/`) with supporting sub-agents (`.agents/agents/`).
 
 The output of this workflow lives in `.ai-workflow/` (ideas, plans, learnings) in whatever project adopts Praxis. This repository itself is the tooling, not the project being built.
 
@@ -26,7 +26,7 @@ Every file uses standard markdown with YAML frontmatter. No tool-specific featur
 File templates live in `reference/template.md` under each skill, loaded only when needed. Shared conventions live in `.agents/conventions.md` and are `@` mentioned by skills. This keeps the initial skill load small.
 
 ### Discovery-based reviewers
-The reviewing skill scans `.agents/agents/reviewers/` and runs whatever it finds. No config file lists reviewers. Adding a reviewer = adding a file. Removing one = deleting a file.
+The px-review skill scans `.agents/agents/reviewers/` and runs whatever it finds. No config file lists reviewers. Adding a reviewer = adding a file. Removing one = deleting a file.
 
 ### Shared tag registry
 All document types (ideas, plans, learnings) share `.ai-workflow/tags`. Skills read existing tags before creating new ones to prevent vocabulary sprawl.
@@ -39,10 +39,10 @@ Ideas: `raw` → `planning` → `in-progress` → `done` / `abandoned`
 Plans: `draft` → `ready` → `in-progress` → `done` / `abandoned`
 
 Status transitions are owned by specific skills:
-- Brainstorming creates ideas as `raw`
-- Planning sets ideas to `planning`, creates plans as `draft`, sets to `ready` after approval
-- Implementing sets plans to `in-progress`
-- Retrospective sets plans and ideas to `done`
+- px-brainstorm creates ideas as `raw`
+- px-plan sets ideas to `planning`, creates plans as `draft`, sets to `ready` after approval
+- px-implement sets plans to `in-progress`
+- px-retrospective sets plans and ideas to `done`
 
 ## Key conventions
 
@@ -68,7 +68,7 @@ Status transitions are owned by specific skills:
 ### Adding a new reviewer
 1. Create `.agents/agents/reviewers/reviewer-name.md` with frontmatter (`name`, `description`)
 2. Reference `../../reviewer-output-format.md` for the output format
-3. No other changes needed — the reviewing skill discovers it automatically
+3. No other changes needed — the px-review skill discovers it automatically
 
 ### Modifying shared conventions
 Edit `.agents/conventions.md`. All skills that `@` mention it will pick up changes automatically. Be careful with status values — multiple skills depend on the lifecycle.

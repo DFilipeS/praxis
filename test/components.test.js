@@ -18,11 +18,11 @@ function makeTemplates(entries) {
 
 describe("getComponentForFile", () => {
   it("returns null for core skill files", () => {
-    expect(getComponentForFile(".agents/skills/brainstorming/SKILL.md")).toBeNull();
-    expect(getComponentForFile(".agents/skills/planning/SKILL.md")).toBeNull();
-    expect(getComponentForFile(".agents/skills/implementing/SKILL.md")).toBeNull();
-    expect(getComponentForFile(".agents/skills/reviewing/SKILL.md")).toBeNull();
-    expect(getComponentForFile(".agents/skills/retrospective/SKILL.md")).toBeNull();
+    expect(getComponentForFile(".agents/skills/px-brainstorm/SKILL.md")).toBeNull();
+    expect(getComponentForFile(".agents/skills/px-plan/SKILL.md")).toBeNull();
+    expect(getComponentForFile(".agents/skills/px-implement/SKILL.md")).toBeNull();
+    expect(getComponentForFile(".agents/skills/px-review/SKILL.md")).toBeNull();
+    expect(getComponentForFile(".agents/skills/px-retrospective/SKILL.md")).toBeNull();
   });
 
   it("returns skill component for optional skill files", () => {
@@ -79,7 +79,7 @@ describe("getCoreFiles", () => {
       [".agents/conventions.md", "conventions"],
       [".agents/reviewer-output-format.md", "format"],
       [".agents/agents/codebase-explorer.md", "explorer"],
-      [".agents/skills/brainstorming/SKILL.md", "brainstorm"],
+      [".agents/skills/px-brainstorm/SKILL.md", "brainstorm"],
       [".agents/skills/agent-browser/SKILL.md", "browser"],
       [".agents/agents/reviewers/security.md", "security"],
     ]);
@@ -89,7 +89,7 @@ describe("getCoreFiles", () => {
     expect(core.has(".agents/conventions.md")).toBe(true);
     expect(core.has(".agents/reviewer-output-format.md")).toBe(true);
     expect(core.has(".agents/agents/codebase-explorer.md")).toBe(true);
-    expect(core.has(".agents/skills/brainstorming/SKILL.md")).toBe(true);
+    expect(core.has(".agents/skills/px-brainstorm/SKILL.md")).toBe(true);
     expect(core.has(".agents/skills/agent-browser/SKILL.md")).toBe(false);
     expect(core.has(".agents/agents/reviewers/security.md")).toBe(false);
   });
@@ -97,7 +97,7 @@ describe("getCoreFiles", () => {
   it("returns all templates when none are optional", () => {
     const templates = makeTemplates([
       [".agents/conventions.md", "conventions"],
-      [".agents/skills/brainstorming/SKILL.md", "brainstorm"],
+      [".agents/skills/px-brainstorm/SKILL.md", "brainstorm"],
     ]);
     expect(getCoreFiles(templates).size).toBe(2);
   });
@@ -147,7 +147,7 @@ describe("discoverOptionalComponents", () => {
   it("finds all optional components from a templates map", () => {
     const templates = makeTemplates([
       [".agents/conventions.md", "core"],
-      [".agents/skills/brainstorming/SKILL.md", "---\ndescription: Brainstorm\n---"],
+      [".agents/skills/px-brainstorm/SKILL.md", "---\ndescription: Brainstorm\n---"],
       [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser automation"\n---'],
       [".agents/skills/agent-browser/references/commands.md", "commands"],
       [".agents/skills/figma-to-code/SKILL.md", "---\ndescription: Figma\n---"],
@@ -158,9 +158,9 @@ describe("discoverOptionalComponents", () => {
     const components = discoverOptionalComponents(templates);
 
     // Only optional: agent-browser, figma-to-code (skills), security, code-quality (reviewers)
-    // brainstorming is a core skill, should not appear
+    // px-brainstorm is a core skill, should not appear
     const names = components.map((c) => c.name);
-    expect(names).not.toContain("brainstorming");
+    expect(names).not.toContain("px-brainstorm");
     expect(names).toContain("agent-browser");
     expect(names).toContain("figma-to-code");
     expect(names).toContain("security");
@@ -193,7 +193,7 @@ describe("discoverOptionalComponents", () => {
   it("returns empty array when no optional components exist", () => {
     const templates = makeTemplates([
       [".agents/conventions.md", "core"],
-      [".agents/skills/brainstorming/SKILL.md", "core skill"],
+      [".agents/skills/px-brainstorm/SKILL.md", "core skill"],
     ]);
     expect(discoverOptionalComponents(templates)).toEqual([]);
   });
@@ -257,13 +257,13 @@ describe("getSelectedComponents", () => {
     const templates = makeTemplates([
       [".agents/skills/agent-browser/SKILL.md", "---\ndescription: Browser\n---"],
       [".agents/agents/reviewers/security.md", "---\ndescription: Security\n---"],
-      [".agents/skills/brainstorming/SKILL.md", "core"],
+      [".agents/skills/px-brainstorm/SKILL.md", "core"],
       [".agents/conventions.md", "core"],
     ]);
 
     const result = getSelectedComponents(manifest, templates);
     expect(result.skills).toContain("agent-browser");
-    expect(result.skills).not.toContain("brainstorming");
+    expect(result.skills).not.toContain("px-brainstorm");
     expect(result.reviewers).toContain("security");
   });
 });

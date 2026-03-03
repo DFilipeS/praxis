@@ -261,7 +261,7 @@ describe("init", () => {
     fetchTemplates.mockResolvedValue(
       new Map([
         [".agents/conventions.md", "# Core"],
-        [".agents/skills/brainstorming/SKILL.md", "# Core skill"],
+        [".agents/skills/px-brainstorm/SKILL.md", "# Core skill"],
         [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
         [".agents/skills/figma-to-code/SKILL.md", '---\ndescription: "Figma"\n---'],
         [".agents/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
@@ -275,7 +275,7 @@ describe("init", () => {
 
     // Core files always installed
     expect(existsSync(join(tmpDir, ".agents/conventions.md"))).toBe(true);
-    expect(existsSync(join(tmpDir, ".agents/skills/brainstorming/SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, ".agents/skills/px-brainstorm/SKILL.md"))).toBe(true);
 
     // Selected optional components installed
     expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
@@ -330,7 +330,7 @@ describe("init", () => {
     fetchTemplates.mockResolvedValue(
       new Map([
         [".agents/conventions.md", "# Core"],
-        [".agents/skills/brainstorming/SKILL.md", "# Core skill"],
+        [".agents/skills/px-brainstorm/SKILL.md", "# Core skill"],
       ])
     );
 

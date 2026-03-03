@@ -43,7 +43,7 @@ Use the `implement/` prefix for implementation branch names: `implement/plan-slu
 
 ### Ideas
 - `raw` — just captured from brainstorming
-- `planning` — picked up by the planning skill
+- `planning` — picked up by the px-plan skill
 - `in-progress` — currently being implemented
 - `done` — implemented
 - `abandoned` — discarded
