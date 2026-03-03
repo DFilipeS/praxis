@@ -22,8 +22,8 @@ Inspired by [Every's Compound Engineering guide](https://every.to/guides/compoun
 
 ```
 px-brainstorm → px-plan → px-implement → px-review → px-retrospect
-       ↑                                                         │
-       └────────────────── learnings feed back ──────────────────┘
+       ↑                                                   │
+       └────────────────── learnings feed back ────────────┘
 ```
 
 1. **px-brainstorm** — Explore ideas through conversation. No code, no technical details. Output: idea files.
