@@ -23,4 +23,4 @@ The security reviewer found path traversal via tarball paths and manifest keys â
 
 ## Recommendation
 
-Always run the reviewing skill after implementation, especially for code that processes external input (network responses, user-supplied files, config files). The review step is most valuable when it runs multiple specialized reviewers in parallel rather than a single general review.
+Always run the px-review skill after implementation, especially for code that processes external input (network responses, user-supplied files, config files). The review step is most valuable when it runs multiple specialized reviewers in parallel rather than a single general review.

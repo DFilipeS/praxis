@@ -31,7 +31,7 @@ Split Praxis components into **core** (always installed, part of the workflow) a
 - **Core component definition**: hardcoded in the CLI for now. Future iteration could move to self-declaration via frontmatter.
 - **Removing locally modified components**: warn and ask for confirmation before deleting.
 - **Non-interactive mode**: not needed for now, keep it simple.
-- **All reviewers are optional.** The reviewing skill is core (the workflow step), but the reviewer agents are a starting set people can swap entirely. Users who bring their own reviewers can toggle all built-in ones off.
+- **All reviewers are optional.** The px-review skill is core (the workflow step), but the reviewer agents are a starting set people can swap entirely. Users who bring their own reviewers can toggle all built-in ones off.
 - **Backward compatible.** Existing manifests without `selectedComponents` are treated as "everything selected." Existing projects keep working and gain the selection capability when they next run `select` or `update`.
 
 ## Open Questions

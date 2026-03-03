@@ -189,7 +189,7 @@ Invoke skills by name through your AI agent:
 
 ### Adding project-specific reviewers
 
-Drop a `.md` file into `.agents/agents/reviewers/`. The reviewing skill discovers and runs all reviewers in that directory automatically. Follow the output format in `.agents/reviewer-output-format.md`.
+Drop a `.md` file into `.agents/agents/reviewers/`. The px-review skill discovers and runs all reviewers in that directory automatically. Follow the output format in `.agents/reviewer-output-format.md`.
 
 Example: create `.agents/agents/reviewers/elixir-conventions.md` for Elixir-specific checks.
 
