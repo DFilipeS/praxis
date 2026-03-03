@@ -1,7 +1,7 @@
 ---
 title: px- Prefix for Core Skills
 date: 2026-03-03
-status: raw
+status: planning
 tags: [developer-experience, naming]
 ---
 
@@ -33,4 +33,4 @@ Single approach identified:
 
 ## Related Documents
 
-- (none yet)
+- .ai-workflow/plans/20260303-px-prefix-for-core-skills.md
