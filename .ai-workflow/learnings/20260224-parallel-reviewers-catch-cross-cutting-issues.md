@@ -4,7 +4,7 @@ date: 2026-02-24
 category: pattern
 plans:
   - .ai-workflow/plans/20260223-npm-cli-distribution.md
-tags: [cli, reviewing, tooling]
+tags: [cli, px-review, tooling]
 ---
 
 # Parallel reviewers catch cross-cutting issues that manual testing misses

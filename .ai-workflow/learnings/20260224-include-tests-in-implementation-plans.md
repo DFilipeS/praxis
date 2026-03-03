@@ -4,7 +4,7 @@ date: 2026-02-24
 category: anti-pattern
 plans:
   - .ai-workflow/plans/20260223-npm-cli-distribution.md
-tags: [cli, planning, testing]
+tags: [cli, px-plan, testing]
 ---
 
 # Include automated tests in implementation plans
