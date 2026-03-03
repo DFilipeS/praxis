@@ -1,7 +1,7 @@
 ---
 title: px- Prefix for Core Skills
 date: 2026-03-03
-status: planning
+status: done
 tags: [developer-experience, naming]
 ---
 
@@ -34,3 +34,5 @@ Single approach identified:
 ## Related Documents
 
 - .ai-workflow/plans/20260303-px-prefix-for-core-skills.md
+- .ai-workflow/learnings/20260303-verify-context-before-applying-pattern-based-changes.md
+- .ai-workflow/learnings/20260303-parallel-reviewer-disagreement-reveals-nuance.md
