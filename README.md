@@ -21,16 +21,16 @@ Inspired by [Every's Compound Engineering guide](https://every.to/guides/compoun
 ## The Cycle
 
 ```
-brainstorming → planning → implementing → reviewing → retrospective
-      ↑                                                      │
-      └──────────────── learnings feed back ─────────────────┘
+px-brainstorm → px-plan → px-implement → px-review → px-retrospective
+       ↑                                                              │
+       └──────────────── learnings feed back ─────────────────────────┘
 ```
 
-1. **Brainstorming** — Explore ideas through conversation. No code, no technical details. Output: idea files.
-2. **Planning** — Turn an idea into concrete, actionable implementation plans. Parallel sub-agents research the codebase, past learnings, and external best practices. Output: plan files.
-3. **Implementing** — Execute a plan step by step, committing meaningful units of work. Output: code on a feature branch.
-4. **Reviewing** — Run configurable reviewer agents in parallel against the changed code. Findings are presented, not auto-fixed. Output: prioritized review findings.
-5. **Retrospective** — Analyze completed work, capture specific learnings. Output: learning files that feed back into future brainstorming and planning sessions.
+1. **px-brainstorm** — Explore ideas through conversation. No code, no technical details. Output: idea files.
+2. **px-plan** — Turn an idea into concrete, actionable implementation plans. Parallel sub-agents research the codebase, past learnings, and external best practices. Output: plan files.
+3. **px-implement** — Execute a plan step by step, committing meaningful units of work. Output: code on a feature branch.
+4. **px-review** — Run configurable reviewer agents in parallel against the changed code. Findings are presented, not auto-fixed. Output: prioritized review findings.
+5. **px-retrospective** — Analyze completed work, capture specific learnings. Output: learning files that feed back into future brainstorming and planning sessions.
 
 ## Components
 
@@ -40,11 +40,11 @@ Core skills implement the full development cycle and are always installed.
 
 | Skill           | Description                                                                          |
 | --------------- | ------------------------------------------------------------------------------------ |
-| `brainstorming` | Explore ideas through open-ended conversation before any planning or implementation  |
-| `planning`      | Turn a brainstormed idea into a concrete, phased implementation plan                 |
-| `implementing`  | Execute a plan step by step, committing meaningful units of work                     |
-| `reviewing`     | Run configurable reviewer agents in parallel; findings are presented, not auto-fixed |
-| `retrospective` | Capture specific learnings from completed work to improve future cycles              |
+| `px-brainstorm` | Explore ideas through open-ended conversation before any planning or implementation  |
+| `px-plan`       | Turn a brainstormed idea into a concrete, phased implementation plan                 |
+| `px-implement`  | Execute a plan step by step, committing meaningful units of work                     |
+| `px-review`     | Run configurable reviewer agents in parallel; findings are presented, not auto-fixed |
+| `px-retrospective` | Capture specific learnings from completed work to improve future cycles              |
 
 Optional skills are project-specific. Select them during `praxis init` or change your selection anytime with `praxis components`.
 
@@ -56,7 +56,7 @@ Optional skills are project-specific. Select them during `praxis init` or change
 
 ### Reviewers
 
-All reviewers are optional. They run in parallel during the reviewing skill. Add project-specific ones or remove built-in ones by editing `.agents/agents/reviewers/`.
+All reviewers are optional. They run in parallel during the px-review skill. Add project-specific ones or remove built-in ones by editing `.agents/agents/reviewers/`.
 
 | Reviewer              | Description                                                                     |
 | --------------------- | ------------------------------------------------------------------------------- |
@@ -127,11 +127,11 @@ Note that manual copies won't receive automatic updates.
 Invoke skills by name through your AI agent:
 
 ```
-/skill brainstorming a better way to handle user onboarding
-/skill planning .ai-workflow/ideas/20260222-user-onboarding.md
-/skill implementing .ai-workflow/plans/20260222-user-onboarding-phase-1.md
-/skill reviewing staged
-/skill retrospective .ai-workflow/plans/20260222-user-onboarding-phase-1.md
+/skill px-brainstorm a better way to handle user onboarding
+/skill px-plan .ai-workflow/ideas/20260222-user-onboarding.md
+/skill px-implement .ai-workflow/plans/20260222-user-onboarding-phase-1.md
+/skill px-review staged
+/skill px-retrospective .ai-workflow/plans/20260222-user-onboarding-phase-1.md
 ```
 
 ## Project Structure
@@ -154,13 +154,13 @@ Invoke skills by name through your AI agent:
 │       ├── security.md                   # Includes OWASP Top 10:2025
 │       └── simplicity.md
 └── skills/
-    ├── brainstorming/
+    ├── px-brainstorm/
     │   ├── SKILL.md
     │   └── reference/template.md         # Idea file template
-    ├── planning/
+    ├── px-plan/
     │   ├── SKILL.md
     │   └── reference/template.md         # Plan file template
-    ├── implementing/
+    ├── px-implement/
     │   └── SKILL.md
     ├── agent-browser/
     │   ├── SKILL.md
@@ -172,9 +172,9 @@ Invoke skills by name through your AI agent:
     ├── figma-to-code/
     │   ├── SKILL.md
     │   └── mcp.json                      # Bundles figma-developer-mcp
-    ├── reviewing/
+    ├── px-review/
     │   └── SKILL.md
-    └── retrospective/
+    └── px-retrospective/
         ├── SKILL.md
         └── reference/template.md         # Learning file template
 
@@ -242,7 +242,7 @@ Templates for ideas, plans, and learnings live in `reference/template.md` under 
 
 ## Design Principles
 
-- **Compounding knowledge** — Retrospective learnings feed back into brainstorming and planning, so the system gets smarter with each cycle.
+- **Compounding knowledge** — px-retrospective learnings feed back into px-brainstorm and px-plan, so the system gets smarter with each cycle.
 - **Traceability** — Every plan links to its idea, every learning links to its plan. Status fields track documents through the full lifecycle.
 - **Configurability** — Reviewers are discoverable by convention. Add or remove them per project without changing any configuration.
 

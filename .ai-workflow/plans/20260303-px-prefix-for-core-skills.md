@@ -1,7 +1,7 @@
 ---
 title: px- Prefix for Core Skills
 date: 2026-03-03
-status: ready
+status: in-progress
 ideas:
   - .ai-workflow/ideas/20260303-px-prefix-for-core-skills.md
 group: px-prefix-for-core-skills

@@ -1,10 +1,10 @@
 // Keep in sync with the core skills in .agents/skills/ in this repository.
 const CORE_SKILLS = new Set([
-  "brainstorming",
-  "planning",
-  "implementing",
-  "reviewing",
-  "retrospective",
+  "px-brainstorm",
+  "px-plan",
+  "px-implement",
+  "px-review",
+  "px-retrospective",
 ]);
 
 /**
