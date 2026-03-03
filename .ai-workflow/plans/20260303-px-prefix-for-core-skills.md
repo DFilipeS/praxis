@@ -103,17 +103,17 @@ See [.ai-workflow/ideas/20260303-px-prefix-for-core-skills.md](.ai-workflow/idea
 
 ## Acceptance Criteria
 
-- [ ] All 5 skill directories renamed with `px-` prefix
-- [ ] All SKILL.md frontmatter `name` fields updated
-- [ ] `src/components.js` CORE_SKILLS set updated
-- [ ] All cross-skill text references updated
-- [ ] All sub-agent text references updated
-- [ ] AGENTS.md updated
-- [ ] README.md updated
-- [ ] conventions.md updated
-- [ ] All test files pass with updated names
-- [ ] `.ai-workflow/tags` updated (planning → px-plan, reviewing → px-review)
-- [ ] Workflow documents and learnings updated with new skill names
+- [x] All 5 skill directories renamed with `px-` prefix
+- [x] All SKILL.md frontmatter `name` fields updated
+- [x] `src/components.js` CORE_SKILLS set updated
+- [x] All cross-skill text references updated
+- [x] All sub-agent text references updated
+- [x] AGENTS.md updated
+- [x] README.md updated
+- [x] conventions.md updated
+- [x] All test files pass with updated names
+- [x] `.ai-workflow/tags` updated (planning → px-plan, reviewing → px-review)
+- [x] Workflow documents and learnings updated with new skill names
 
 ## Dependencies
 
