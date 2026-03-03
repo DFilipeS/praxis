@@ -62,7 +62,7 @@ Present the review findings to the user. Fix any issues the user approves.
 
 After implementation and review are complete:
 - Update the plan's acceptance criteria checkboxes to reflect final state
-- Leave the plan's `status` as `in-progress` (the px-retrospective skill will set it to `done`)
+- Leave the plan's `status` as `in-progress` (the px-retrospect skill will set it to `done`)
 
 ## Git conventions
 

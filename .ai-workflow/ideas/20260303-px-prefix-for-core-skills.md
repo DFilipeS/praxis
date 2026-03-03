@@ -28,7 +28,7 @@ Add a `px-` prefix to the 5 core workflow skills to namespace them and avoid com
 ## Possible Directions
 
 Single approach identified:
-- Rename: `brainstorming` → `px-brainstorm`, `planning` → `px-plan`, `implementing` → `px-implement`, `reviewing` → `px-review`, `retrospective` → `px-retrospective`
+- Rename: `brainstorming` → `px-brainstorm`, `planning` → `px-plan`, `implementing` → `px-implement`, `reviewing` → `px-review`, `retrospective` → `px-retrospect`
 - Update all skill files and internal references accordingly
 
 ## Related Documents

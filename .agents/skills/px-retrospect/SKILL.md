@@ -1,5 +1,5 @@
 ---
-name: px-retrospective
+name: px-retrospect
 description: "Reviews completed work to document learnings, mistakes, and patterns for future cycles. Use after implementation is done or when reflecting on past work."
 argument-hint: "path to plan file(s), e.g. .ai-workflow/plans/20260222-offline-first-sync-phase-1.md"
 ---

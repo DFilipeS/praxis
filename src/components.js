@@ -4,7 +4,7 @@ const CORE_SKILLS = new Set([
   "px-plan",
   "px-implement",
   "px-review",
-  "px-retrospective",
+  "px-retrospect",
 ]);
 
 /**

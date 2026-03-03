@@ -39,14 +39,14 @@ See [.ai-workflow/ideas/20260303-px-prefix-for-core-skills.md](.ai-workflow/idea
    - `.agents/skills/planning/` → `.agents/skills/px-plan/`
    - `.agents/skills/implementing/` → `.agents/skills/px-implement/`
    - `.agents/skills/reviewing/` → `.agents/skills/px-review/`
-   - `.agents/skills/retrospective/` → `.agents/skills/px-retrospective/`
+   - `.agents/skills/retrospective/` → `.agents/skills/px-retrospect/`
 
 2. **Update SKILL.md frontmatter** — In each renamed directory's `SKILL.md`, update the `name` field:
    - `brainstorming` → `px-brainstorm`
    - `planning` → `px-plan`
    - `implementing` → `px-implement`
    - `reviewing` → `px-review`
-   - `retrospective` → `px-retrospective`
+   - `retrospective` → `px-retrospect`
 
 3. **Update CORE_SKILLS in src/components.js** — Update the hardcoded set (lines 2-8):
    ```javascript
@@ -55,7 +55,7 @@ See [.ai-workflow/ideas/20260303-px-prefix-for-core-skills.md](.ai-workflow/idea
      "px-plan",
      "px-implement",
      "px-review",
-     "px-retrospective",
+      "px-retrospect",
    ]);
    ```
 

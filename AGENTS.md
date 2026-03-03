@@ -4,7 +4,7 @@ This repository contains a portable AI-assisted development workflow. It is a co
 
 ## What this project is
 
-Praxis defines a full development cycle: px-brainstorm → px-plan → px-implement → px-review → px-retrospective. Each phase is implemented as a skill (`.agents/skills/`) with supporting sub-agents (`.agents/agents/`).
+Praxis defines a full development cycle: px-brainstorm → px-plan → px-implement → px-review → px-retrospect. Each phase is implemented as a skill (`.agents/skills/`) with supporting sub-agents (`.agents/agents/`).
 
 The output of this workflow lives in `.ai-workflow/` (ideas, plans, learnings) in whatever project adopts Praxis. This repository itself is the tooling, not the project being built.
 
@@ -42,7 +42,7 @@ Status transitions are owned by specific skills:
 - px-brainstorm creates ideas as `raw`
 - px-plan sets ideas to `planning`, creates plans as `draft`, sets to `ready` after approval
 - px-implement sets plans to `in-progress`
-- px-retrospective sets plans and ideas to `done`
+- px-retrospect sets plans and ideas to `done`
 
 ## Key conventions
 

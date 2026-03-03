@@ -17,7 +17,7 @@ Split Praxis components into **core** (always installed, part of the workflow) a
 
 ## Key Insights
 
-- **Core vs optional is hardcoded for now.** The core workflow (px-brainstorm → px-plan → px-implement → px-review → px-retrospective) plus its supporting sub-agents and shared files are always required. Optional components are everything else. A future iteration could move to self-declaration via frontmatter.
+- **Core vs optional is hardcoded for now.** The core workflow (px-brainstorm → px-plan → px-implement → px-review → px-retrospect) plus its supporting sub-agents and shared files are always required. Optional components are everything else. A future iteration could move to self-declaration via frontmatter.
 - **Allowlist over blocklist.** Tracking what's included is more predictable than tracking what's excluded. New optional components added to Praxis don't appear uninvited — `update` nudges instead: "2 new optional components available. Run `praxis select` to review."
 - **Component-level granularity, not file-level.** Users think in terms of "I want the Figma skill" not "I want these 3 files." The CLI maps component names to their constituent files.
 - **Selection grouped by type.** The checklist during `init` and `select` groups optional components by type (skills, reviewers) for clarity.

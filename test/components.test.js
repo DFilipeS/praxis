@@ -22,7 +22,7 @@ describe("getComponentForFile", () => {
     expect(getComponentForFile(".agents/skills/px-plan/SKILL.md")).toBeNull();
     expect(getComponentForFile(".agents/skills/px-implement/SKILL.md")).toBeNull();
     expect(getComponentForFile(".agents/skills/px-review/SKILL.md")).toBeNull();
-    expect(getComponentForFile(".agents/skills/px-retrospective/SKILL.md")).toBeNull();
+    expect(getComponentForFile(".agents/skills/px-retrospect/SKILL.md")).toBeNull();
   });
 
   it("returns skill component for optional skill files", () => {
