@@ -47,7 +47,6 @@ export async function update() {
   const newFiles = [];
   const removedFiles = [];
   const changedFiles = [];
-  const unchangedFiles = [];
 
   const currentSelection = getSelectedComponents(manifest, templates);
   const selectedSkillNames = new Set(currentSelection.skills);
@@ -89,8 +88,6 @@ export async function update() {
         if (!isSelected) continue;
       }
       changedFiles.push({ relativePath, content, hash: newHash });
-    } else {
-      unchangedFiles.push(relativePath);
     }
   }
 
@@ -256,7 +253,10 @@ export async function update() {
         }
       }
 
-      updatedManifestFiles[relativePath] = { hash, destinations: newDestinations };
+      // Only update the stored hash if at least one destination was actually updated.
+      // If all were skipped, keep the old hash so subsequent runs can still detect the change.
+      const effectiveHash = anyUpdated ? hash : entry.hash;
+      updatedManifestFiles[relativePath] = { hash: effectiveHash, destinations: newDestinations };
       if (anyUpdated) {
         updated++;
         p.log.success(`${pc.yellow("updated")} ${relativePath}`);

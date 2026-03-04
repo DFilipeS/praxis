@@ -3,7 +3,7 @@ import { join } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { hashFile, readManifest } from "../manifest.js";
-import { getAdapter, listAdapters } from "../adapters.js";
+import { getAdapter } from "../adapters.js";
 
 export async function status() {
   const projectRoot = process.cwd();
@@ -37,7 +37,7 @@ export async function status() {
       const entry = manifest.files[relativePath];
 
       if (entry.destinations && Object.keys(entry.destinations).length > 0) {
-        for (const [toolName, destPath] of Object.entries(entry.destinations)) {
+        for (const [, destPath] of Object.entries(entry.destinations)) {
           const fullPath = join(projectRoot, destPath);
 
           if (!existsSync(fullPath)) {
