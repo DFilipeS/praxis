@@ -1,7 +1,7 @@
 ---
 title: Reorganize Multi-Tool Copy Strategy
 date: 2026-03-04
-status: ready
+status: in-progress
 ideas:
   - .ai-workflow/ideas/20260304-reorganize-multi-tool-copy-strategy.md
 group: reorganize-multi-tool-copy-strategy
@@ -96,39 +96,39 @@ Current Praxis copies content to `.agents/` directory, but tools like Cursor and
 
 ## Acceptance Criteria
 
-- [ ] Repository `.agents/` directory renamed to `praxis/`
-- [ ] `src/templates.js` successfully fetches from `praxis/` in GitHub tarball
-- [ ] Tool adapter interface defined in `src/adapters.js` or similar
-- [ ] Cursor adapter implemented with proper destination mappings
-- [ ] Claude Code adapter implemented with proper destination mappings
-- [ ] Amp Code adapter implemented for `.agents/` directory (backward compatibility)
-- [ ] OpenCode adapter implemented for `.opencode/` directory
-- [ ] Files are copied to `.agents/` when Amp Code is enabled
-- [ ] Files are copied to `.opencode/skills/` when OpenCode is enabled
-- [ ] Files are copied to `.claude/agents/` when Claude Code is enabled
-- [ ] Shared files (conventions.md, etc.) copied preserving relative paths, not transformed
-- [ ] `.praxis-manifest.json` tracks each file's location per-tool with SHA256 hash
-- [ ] Copy process stops immediately on first error with clear error message
-- [ ] `praxis init` uses adapter system, requires no changes when adding new tools
-- [ ] `praxis update` uses adapter system for per-tool comparison
-- [ ] `praxis status` uses adapter system to show per-tool state
-- [ ] Tested with Cursor, Claude Code, Amp Code, and OpenCode enabled simultaneously
-- [ ] Tool adapter interface includes MCP configuration methods (`generateMcpConfig()`, `getMcpConfigPath()`)
-- [ ] Amp Code adapter reads per-skill `mcp.json` directly (no generation needed)
-- [ ] Claude Code adapter generates `.mcp.json` with merged `{ "mcpServers": { ... } }` format
-- [ ] Cursor adapter generates `.cursor/mcp.json` with `${env:VAR}` syntax
-- [ ] OpenCode adapter generates `opencode.json` with `mcp` key, `{env:VAR}` syntax, `type: "local"`
-- [ ] MCP configs regenerated when skills are added/removed during update
-- [ ] MCP config generation stops on first error
-- [ ] `praxis status` shows MCP config status per tool
-- [ ] Mock fifth adapter can be added without modifying init/update/status/MCP/removal commands
-- [ ] Error simulation produces expected stop-and-report behavior
-- [ ] `praxis tool remove <tool>` removes only that tool's Praxis-managed files
-- [ ] Tool removal verifies file hashes before deleting (skips modified files)
-- [ ] Tool removal cleans up empty directories after file deletion
-- [ ] `praxis components remove <component>` removes component from all enabled tools
-- [ ] Component removal regenerates MCP configs (removed skill's mcp.json no longer included)
-- [ ] Modified files are preserved during removal (warning shown to user)
+- [x] Repository `.agents/` directory renamed to `praxis/`
+- [x] `src/templates.js` successfully fetches from `praxis/` in GitHub tarball
+- [x] Tool adapter interface defined in `src/adapters.js` or similar
+- [x] Cursor adapter implemented with proper destination mappings
+- [x] Claude Code adapter implemented with proper destination mappings
+- [x] Amp Code adapter implemented for `.agents/` directory (backward compatibility)
+- [x] OpenCode adapter implemented for `.opencode/` directory
+- [x] Files are copied to `.agents/` when Amp Code is enabled
+- [x] Files are copied to `.opencode/skills/` when OpenCode is enabled
+- [x] Files are copied to `.claude/agents/` when Claude Code is enabled
+- [x] Shared files (conventions.md, etc.) copied preserving relative paths, not transformed
+- [x] `.praxis-manifest.json` tracks each file's location per-tool with SHA256 hash
+- [x] Copy process stops immediately on first error with clear error message
+- [x] `praxis init` uses adapter system, requires no changes when adding new tools
+- [x] `praxis update` uses adapter system for per-tool comparison
+- [x] `praxis status` uses adapter system to show per-tool state
+- [x] Tested with Cursor, Claude Code, Amp Code, and OpenCode enabled simultaneously
+- [x] Tool adapter interface includes MCP configuration methods (`generateMcpConfig()`, `getMcpConfigPath()`)
+- [x] Amp Code adapter reads per-skill `mcp.json` directly (no generation needed)
+- [x] Claude Code adapter generates `.mcp.json` with merged `{ "mcpServers": { ... } }` format
+- [x] Cursor adapter generates `.cursor/mcp.json` with `${env:VAR}` syntax
+- [x] OpenCode adapter generates `opencode.json` with `mcp` key, `{env:VAR}` syntax, `type: "local"`
+- [x] MCP configs regenerated when skills are added/removed during update
+- [x] MCP config generation stops on first error
+- [x] `praxis status` shows MCP config status per tool
+- [x] Mock fifth adapter can be added without modifying init/update/status/MCP/removal commands
+- [x] Error simulation produces expected stop-and-report behavior
+- [x] `praxis tool remove <tool>` removes only that tool's Praxis-managed files
+- [x] Tool removal verifies file hashes before deleting (skips modified files)
+- [x] Tool removal cleans up empty directories after file deletion
+- [x] `praxis components remove <component>` removes component from all enabled tools
+- [x] Component removal regenerates MCP configs (removed skill's mcp.json no longer included)
+- [x] Modified files are preserved during removal (warning shown to user)
 
 ## Dependencies
 
