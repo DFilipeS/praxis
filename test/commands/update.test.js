@@ -823,4 +823,109 @@ describe("update command", () => {
     );
     expect(p.outro).toHaveBeenCalled();
   });
+
+  it("installs new files to tool destinations when tools are enabled", async () => {
+    readManifest.mockResolvedValue({
+      ...makeManifest({}),
+      enabledTools: ["amp-code", "cursor"],
+    });
+    fetchTemplates.mockResolvedValue(
+      new Map([["praxis/conventions.md", "core content"]])
+    );
+
+    await update();
+
+    // Files installed to tool destinations
+    expect(existsSync(join(tmpDir, ".agents/conventions.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, ".cursor/conventions.md"))).toBe(true);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.files["praxis/conventions.md"].destinations).toEqual({
+      "amp-code": ".agents/conventions.md",
+      cursor: ".cursor/conventions.md",
+    });
+  });
+
+  it("updates changed files at tool destinations when tools are enabled", async () => {
+    await writeTestFile(".agents/conventions.md", "v1");
+    await writeTestFile(".cursor/conventions.md", "v1");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        "praxis/conventions.md": {
+          hash: hashContent("v1"),
+          destinations: {
+            "amp-code": ".agents/conventions.md",
+            cursor: ".cursor/conventions.md",
+          },
+        },
+      }),
+      enabledTools: ["amp-code", "cursor"],
+    });
+    fetchTemplates.mockResolvedValue(
+      new Map([["praxis/conventions.md", "v2"]])
+    );
+
+    await update();
+
+    expect(await readFile(join(tmpDir, ".agents/conventions.md"), "utf-8")).toBe("v2");
+    expect(await readFile(join(tmpDir, ".cursor/conventions.md"), "utf-8")).toBe("v2");
+    expect(p.log.success).toHaveBeenCalledWith(
+      expect.stringContaining("updated")
+    );
+  });
+
+  it("prompts when tool destination file is locally modified", async () => {
+    await writeTestFile(".agents/conventions.md", "locally modified");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        "praxis/conventions.md": {
+          hash: hashContent("v1"),
+          destinations: { "amp-code": ".agents/conventions.md" },
+        },
+      }),
+      enabledTools: ["amp-code"],
+    });
+    fetchTemplates.mockResolvedValue(
+      new Map([["praxis/conventions.md", "v2"]])
+    );
+    p.select.mockResolvedValue("skip");
+
+    await update();
+
+    expect(p.select).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining(".agents/conventions.md"),
+      })
+    );
+    expect(await readFile(join(tmpDir, ".agents/conventions.md"), "utf-8")).toBe(
+      "locally modified"
+    );
+  });
+
+  it("removes files from tool destinations when upstream removes them", async () => {
+    await writeTestFile(".agents/old.md", "content");
+
+    readManifest.mockResolvedValue({
+      ...makeManifest({
+        "praxis/old.md": {
+          hash: hashContent("content"),
+          destinations: { "amp-code": ".agents/old.md" },
+        },
+      }),
+      enabledTools: ["amp-code"],
+    });
+    fetchTemplates.mockResolvedValue(new Map());
+    p.confirm.mockResolvedValue(true);
+
+    await update();
+
+    expect(existsSync(join(tmpDir, ".agents/old.md"))).toBe(false);
+    expect(p.log.success).toHaveBeenCalledWith(
+      expect.stringContaining("removed")
+    );
+  });
 });
