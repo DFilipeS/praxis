@@ -1,9 +1,10 @@
 import { existsSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
-import { sep } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve, sep } from "node:path";
 import * as p from "@clack/prompts";
 import { createPatch } from "diff";
 import { hashContent } from "./manifest.js";
+import { getAdapter } from "./adapters.js";
 
 /**
  * Returns true if resolvedPath is safely within resolvedRoot.
@@ -74,4 +75,40 @@ export async function installFile(fullPath, relativePath, content) {
 
   await writeFile(fullPath, content);
   return { status: "written", hash: hashContent(content) };
+}
+
+/**
+ * Installs a source file to all enabled tool destinations.
+ * For each enabled tool adapter, asks where to install the file and writes it.
+ * Stops immediately on first write error.
+ *
+ * Returns:
+ *   { hash, destinations: { toolName: destinationPath, ... } }
+ */
+export async function installToDestinations(
+  projectRoot,
+  resolvedRoot,
+  sourceFile,
+  content,
+  enabledTools
+) {
+  const hash = hashContent(content);
+  const destinations = {};
+
+  for (const toolName of enabledTools) {
+    const adapter = getAdapter(toolName);
+    if (!adapter) continue;
+
+    const destPath = adapter.getDestinationPath(sourceFile);
+    if (!destPath) continue;
+
+    const fullPath = resolve(projectRoot, destPath);
+    if (!isSafePath(resolvedRoot, fullPath)) continue;
+
+    await mkdir(dirname(fullPath), { recursive: true });
+    await writeFile(fullPath, content);
+    destinations[toolName] = destPath;
+  }
+
+  return { hash, destinations };
 }

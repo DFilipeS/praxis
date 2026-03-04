@@ -35,6 +35,7 @@ beforeEach(async () => {
   p.spinner = vi.fn(() => ({ start: vi.fn(), stop: vi.fn() }));
   p.cancel = vi.fn();
   p.isCancel = vi.fn().mockReturnValue(false);
+  p.multiselect = vi.fn().mockResolvedValue([]);
   p.groupMultiselect = vi.fn().mockResolvedValue([]);
 
   fetchTemplates.mockResolvedValue(

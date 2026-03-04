@@ -12,7 +12,8 @@ import {
   buildGroupOptions,
   decodeComponentValue,
 } from "../components.js";
-import { installFile, isSafePath } from "../files.js";
+import { installFile, installToDestinations, isSafePath } from "../files.js";
+import { listAdapters, regenerateToolConfigs } from "../adapters.js";
 
 export async function init() {
   const projectRoot = process.cwd();
@@ -42,6 +43,26 @@ export async function init() {
   }
 
   s.stop(`Fetched ${templates.size} template files`);
+
+  // Present tool selection
+  const allAdapters = listAdapters();
+  const toolOptions = allAdapters.map((a) => ({
+    value: a.name,
+    label: a.displayName,
+  }));
+
+  const selectedTools = await p.multiselect({
+    message: "Select tools to install for:",
+    options: toolOptions,
+    required: false,
+  });
+
+  if (p.isCancel(selectedTools)) {
+    p.cancel("Cancelled.");
+    process.exit(0);
+  }
+
+  const enabledTools = selectedTools;
 
   // Present optional component selection
   const optionalComponents = discoverOptionalComponents(templates);
@@ -86,21 +107,33 @@ export async function init() {
   let skipped = 0;
 
   for (const [relativePath, content] of [...filesToInstall.entries()].sort()) {
-    const fullPath = resolve(projectRoot, relativePath);
-    if (!isSafePath(resolvedRoot, fullPath)) {
-      continue;
-    }
+    // Install to each enabled tool's destination
+    if (enabledTools.length > 0) {
+      const { hash, destinations } = await installToDestinations(
+        projectRoot,
+        resolvedRoot,
+        relativePath,
+        content,
+        enabledTools
+      );
+      manifestFiles[relativePath] = { hash, destinations };
+      installed++;
+    } else {
+      // No tools enabled — just track the source hash
+      const fullPath = resolve(projectRoot, relativePath);
+      if (!isSafePath(resolvedRoot, fullPath)) continue;
 
-    await mkdir(dirname(fullPath), { recursive: true });
+      await mkdir(dirname(fullPath), { recursive: true });
 
-    const { status, hash } = await installFile(fullPath, relativePath, content);
-    if (status === "cancelled") {
-      p.cancel("Cancelled.");
-      process.exit(0);
+      const { status, hash } = await installFile(fullPath, relativePath, content);
+      if (status === "cancelled") {
+        p.cancel("Cancelled.");
+        process.exit(0);
+      }
+      manifestFiles[relativePath] = { hash };
+      if (status === "skipped") skipped++;
+      else installed++;
     }
-    manifestFiles[relativePath] = { hash };
-    if (status === "skipped") skipped++;
-    else installed++;
   }
 
   // Create .ai-workflow directories (not tracked in manifest)
@@ -118,13 +151,30 @@ export async function init() {
   }
 
   const now = new Date().toISOString();
-  await writeManifest(projectRoot, {
+  const manifest = {
     version: "1.0.0",
     installedAt: now,
     updatedAt: now,
+    enabledTools,
     selectedComponents,
     files: manifestFiles,
-  });
+  };
+
+  await writeManifest(projectRoot, manifest);
+
+  // Generate MCP configs for enabled tools
+  if (enabledTools.length > 0) {
+    try {
+      const regenerated = await regenerateToolConfigs(projectRoot, manifest);
+      if (regenerated.length > 0) {
+        p.log.info(
+          `Generated MCP config for ${regenerated.join(", ")}`
+        );
+      }
+    } catch (e) {
+      p.log.warn(`Could not generate tool configs: ${e.message}`);
+    }
+  }
 
   const summary = [`${pc.green(installed)} files installed`];
   if (skipped > 0) summary.push(`${pc.yellow(skipped)} files skipped`);

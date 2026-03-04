@@ -8,6 +8,7 @@ import {
   readManifest,
   writeManifest,
   isLocallyModified,
+  isDestinationModified,
 } from '../src/manifest.js';
 
 describe('hashContent', () => {
@@ -170,5 +171,33 @@ describe('isLocallyModified', () => {
   it('returns true when file does not exist on disk (catch branch)', async () => {
     const manifest = { files: { 'gone.txt': { hash: 'somehash' } } };
     expect(await isLocallyModified(tmpDir, 'gone.txt', manifest)).toBe(true);
+  });
+});
+
+describe('isDestinationModified', () => {
+  let tmpDir;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(tmpdir(), 'manifest-test-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns false when file hash matches source hash', async () => {
+    const content = 'original content';
+    await writeFile(join(tmpDir, 'file.txt'), content);
+    const hash = hashContent(content);
+    expect(await isDestinationModified(tmpDir, 'file.txt', hash)).toBe(false);
+  });
+
+  it('returns true when file hash differs from source hash', async () => {
+    await writeFile(join(tmpDir, 'file.txt'), 'modified content');
+    expect(await isDestinationModified(tmpDir, 'file.txt', 'oldhash')).toBe(true);
+  });
+
+  it('returns true when file does not exist', async () => {
+    expect(await isDestinationModified(tmpDir, 'missing.txt', 'somehash')).toBe(true);
   });
 });

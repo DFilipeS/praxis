@@ -34,6 +34,10 @@ export async function writeManifest(projectRoot, manifest) {
   await rename(tmpPath, filePath);
 }
 
+/**
+ * Checks if a file at relativePath has been modified compared to the manifest.
+ * Supports both old format { hash } and new format { hash, destinations }.
+ */
 export async function isLocallyModified(projectRoot, relativePath, manifest) {
   const entry = manifest.files[relativePath];
   if (!entry) return false;
@@ -41,6 +45,19 @@ export async function isLocallyModified(projectRoot, relativePath, manifest) {
   try {
     const currentHash = await hashFile(join(projectRoot, relativePath));
     return currentHash !== entry.hash;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Checks if a file at a specific destination path has been modified
+ * compared to the stored hash for that source file.
+ */
+export async function isDestinationModified(projectRoot, destinationPath, sourceHash) {
+  try {
+    const currentHash = await hashFile(join(projectRoot, destinationPath));
+    return currentHash !== sourceHash;
   } catch {
     return true;
   }
