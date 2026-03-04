@@ -38,5 +38,5 @@ Instead of copying Praxis skills, agents, and MCP configs to `.agents/` (which g
 
 ## Related Documents
 
-- Phase 1 implementation plan: `.ai-workflow/plans/20260304-reorganize-multi-tool-copy-strategy-phase-1.md`
+- Implementation plan: `.ai-workflow/plans/20260304-reorganize-multi-tool-copy-strategy.md`
 - Past learnings on Tool Adapter System: `20260302-*` files in `.ai-workflow/learnings/`

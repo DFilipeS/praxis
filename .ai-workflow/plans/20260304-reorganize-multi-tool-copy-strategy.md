@@ -1,19 +1,18 @@
 ---
-title: Reorganize Multi-Tool Copy Strategy - Phase 1
+title: Reorganize Multi-Tool Copy Strategy
 date: 2026-03-04
 status: ready
 ideas:
   - .ai-workflow/ideas/20260304-reorganize-multi-tool-copy-strategy.md
 group: reorganize-multi-tool-copy-strategy
-phase: 1
 tags: [developer-experience, portability, tooling]
 ---
 
-# Reorganize Multi-Tool Copy Strategy - Phase 1: Core Infrastructure
+# Reorganize Multi-Tool Copy Strategy: Core Infrastructure
 
 ## Goal
 
-Restructure Praxis repository from `.agents/` to `praxis/` source directory and update CLI to copy skills/agents directly to tool-specific directories (`.cursor/`, `.claude/`) instead of `.agents/`. The manifest tracks files per-tool, and the copy process stops on first error.
+Restructure Praxis repository from `.agents/` to `praxis/` source directory and update CLI to copy skills/agents directly to tool-specific directories (`.cursor/`, `.claude/`, `.opencode/`, `.agents/`) instead of `.agents/`. Support adding, updating, and removing tools/components with the manifest tracking files per-tool. The copy process stops on first error, and removal preserves locally modified files.
 
 ## Background
 
@@ -48,6 +47,7 @@ Current Praxis copies content to `.agents/` directory, but tools like Cursor and
    - `getDestinationPath(sourceFile)` - returns where to install a given source file
    - `isEnabled(projectRoot)` - checks if this tool is configured for the project
    - `getToolName()` - returns the tool identifier
+   - `getManagedFiles(projectRoot)` - returns list of files managed by Praxis for this tool (used during tool removal cleanup)
    
    **MCP configuration methods:**
    - `generateMcpConfig(projectRoot, skillMcpConfigs)` - generates tool-specific MCP configuration file from per-skill mcp.json data. Each tool has different formats:
@@ -56,6 +56,7 @@ Current Praxis copies content to `.agents/` directory, but tools like Cursor and
      - Cursor: generates `.cursor/mcp.json` with `${env:VAR}` syntax (transformed from `${VAR}`)
      - OpenCode: generates `opencode.json` with merged `command` array, `environment` key, `{env:VAR}` syntax, and `"type": "local"`
    - `getMcpConfigPath()` - returns the path where MCP config should be written
+   - `cleanupMcpConfig(projectRoot)` - removes MCP config file when tool is disabled (optional, can be handled by generic cleanup)
    
    The core installation and MCP configuration logic should not need to change when adding or removing tools - it simply iterates over available tool adapters.
 
@@ -85,9 +86,13 @@ Current Praxis copies content to `.agents/` directory, but tools like Cursor and
 
 9. **Update status command to use adapters** — Modify `src/commands/status.js` to iterate through tool adapters, asking each to report its state. Each adapter knows how to check its own directory structure. Display per-tool installation status, file sync state, which tools are enabled, and whether MCP configs are present and up to date. The status command should not have tool-specific logic - it delegates to adapters.
 
-10. **Add MCP configuration generation to init and update commands** — After installing skill files, collect all per-skill `mcp.json` files from the installed skills. For each enabled tool adapter, call `generateMcpConfig()` with the collected MCP configurations. The adapter transforms the per-skill configs into the tool-specific format and writes to the appropriate location. Stop on first error. If a skill is added or removed, regenerate MCP configs for all tools during update. MCP configs are written after successful file installation but before writing the manifest.
+10. **Update tool remove command for cleanup** — Modify `src/commands/tool.js` (or create `src/commands/remove.js`) to handle tool removal. When a tool is removed (e.g., `praxis tool remove cursor`), the command should: 1) Ask the adapter which files it manages for this project by calling `getManagedFiles()`, 2) Verify each file in the manifest belongs to the tool being removed and matches the stored hash (to avoid deleting user files), 3) Delete only Praxis-managed files that haven't been modified locally, 4) Remove the tool from the manifest's `enabledTools` list, 5) Clean up empty directories. Stop on first error. Warn if files were modified locally (skip deletion, notify user).
 
-11. **Test the full flow and verify modularity** — Run through `praxis init` with multiple tools enabled. Verify files appear in correct tool directories (`.cursor/skills/`, `.claude/skills/`, `.agents/skills/`, `.opencode/skills/`). Verify MCP configs are generated in correct locations (`.mcp.json`, `.cursor/mcp.json`, `opencode.json`). Run `praxis status` to confirm tracking. Modify a local file and run `praxis update` to verify selective updates. Test error handling with a permission error. Finally, verify that adding a mock fifth tool adapter (without implementing full functionality) doesn't require changes to any other files - demonstrating the modular architecture.
+11. **Add component remove command** — Create or modify the command for removing optional components (skills, reviewers). When a component is removed: 1) Determine which files belong to the component, 2) For each enabled tool, ask the adapter where those files are installed, 3) Verify files in manifest match stored hashes, 4) Delete unmodified Praxis-managed files from all tool directories, 5) Regenerate MCP configs (since skill mcp.json files are being removed), 6) Update manifest's `selectedComponents`. Stop on first error. This allows selective removal without touching core files or other components.
+
+12. **Add MCP configuration generation to init and update commands** — After installing skill files, collect all per-skill `mcp.json` files from the installed skills. For each enabled tool adapter, call `generateMcpConfig()` with the collected MCP configurations. The adapter transforms the per-skill configs into the tool-specific format and writes to the appropriate location. Stop on first error. If a skill is added or removed, regenerate MCP configs for all tools during update. MCP configs are written after successful file installation but before writing the manifest.
+
+13. **Test the full flow including removal** — Run complete test cycle: `praxis init` with multiple tools, verify files in all directories, run `praxis status`, add a skill, verify MCP configs regenerated, remove a skill, verify files deleted but core remains, remove a tool, verify only that tool's files cleaned up while others remain, test error handling during removal (stops on first error, leaves partial state), verify adding mock fifth adapter still requires no core command changes.
 
 ## Acceptance Criteria
 
@@ -116,8 +121,14 @@ Current Praxis copies content to `.agents/` directory, but tools like Cursor and
 - [ ] MCP configs regenerated when skills are added/removed during update
 - [ ] MCP config generation stops on first error
 - [ ] `praxis status` shows MCP config status per tool
-- [ ] Mock fifth adapter can be added without modifying init/update/status/MCP commands
+- [ ] Mock fifth adapter can be added without modifying init/update/status/MCP/removal commands
 - [ ] Error simulation produces expected stop-and-report behavior
+- [ ] `praxis tool remove <tool>` removes only that tool's Praxis-managed files
+- [ ] Tool removal verifies file hashes before deleting (skips modified files)
+- [ ] Tool removal cleans up empty directories after file deletion
+- [ ] `praxis components remove <component>` removes component from all enabled tools
+- [ ] Component removal regenerates MCP configs (removed skill's mcp.json no longer included)
+- [ ] Modified files are preserved during removal (warning shown to user)
 
 ## Dependencies
 
