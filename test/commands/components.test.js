@@ -18,6 +18,7 @@ vi.mock("../../src/files.js", async (importOriginal) => {
   const actual = await importOriginal();
   return {
     installFile: vi.fn(actual.installFile),
+    installToDestinations: vi.fn(actual.installToDestinations),
     isSafePath: actual.isSafePath,
   };
 });
@@ -643,5 +644,62 @@ describe("components", () => {
     );
     // Outro should still be shown
     expect(p.outro).toHaveBeenCalled();
+  });
+
+  it("installs component files to tool destinations when tools are enabled", async () => {
+    readManifest.mockResolvedValue({
+      ...makeManifest({ [CORE_FILE]: "# Core" }, { skills: [], reviewers: [] }),
+      enabledTools: ["amp-code"],
+    });
+
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:agent-browser"]);
+
+    await components();
+
+    // File should be installed at amp-code destination
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.files[BROWSER_SKILL].destinations["amp-code"]).toBe(
+      ".agents/skills/agent-browser/SKILL.md"
+    );
+  });
+
+  it("removes component files from tool destinations when tools are enabled", async () => {
+    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await writeFile(
+      join(tmpDir, ".agents/skills/agent-browser/SKILL.md"),
+      '---\ndescription: "Browser automation"\n---'
+    );
+
+    readManifest.mockResolvedValue({
+      ...makeManifest(
+        {
+          [CORE_FILE]: "# Core",
+          [BROWSER_SKILL]: '---\ndescription: "Browser automation"\n---',
+        },
+        { skills: ["agent-browser"], reviewers: [] }
+      ),
+      enabledTools: ["amp-code"],
+      files: {
+        [CORE_FILE]: { hash: hashContent("# Core") },
+        [BROWSER_SKILL]: {
+          hash: hashContent('---\ndescription: "Browser automation"\n---'),
+          destinations: {
+            "amp-code": ".agents/skills/agent-browser/SKILL.md",
+          },
+        },
+      },
+    });
+
+    p.groupMultiselect = vi.fn().mockResolvedValue([]);
+
+    await components();
+
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(false);
+    // Empty dirs should be cleaned up
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser"))).toBe(false);
   });
 });

@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { fetchTemplates } from "../templates.js";
-import { isLocallyModified, readManifest, writeManifest } from "../manifest.js";
+import { isDestinationModified, isLocallyModified, readManifest, writeManifest } from "../manifest.js";
 import {
   discoverOptionalComponents,
   encodeComponentValue,
@@ -13,7 +13,7 @@ import {
   buildGroupOptions,
   decodeComponentValue,
 } from "../components.js";
-import { installFile, isSafePath } from "../files.js";
+import { installFile, installToDestinations, isSafePath } from "../files.js";
 import { regenerateToolConfigs } from "../adapters.js";
 
 export async function components() {
@@ -94,6 +94,8 @@ export async function components() {
   let filesAdded = 0;
   let filesRemoved = 0;
 
+  const enabledTools = manifest.enabledTools || [];
+
   try {
     // Handle additions
     for (const value of additions) {
@@ -101,28 +103,41 @@ export async function components() {
       const componentFiles = getComponentFiles(templates, name, type);
 
       for (const [relativePath, content] of componentFiles) {
-        const fullPath = resolve(projectRoot, relativePath);
-        if (!isSafePath(resolvedRoot, fullPath)) {
-          continue;
-        }
-
-        await mkdir(dirname(fullPath), { recursive: true });
-
-        const { status, hash } = await installFile(fullPath, relativePath, content);
-        if (status === "cancelled") {
-          await writeManifest(projectRoot, {
-            ...manifest,
-            updatedAt: new Date().toISOString(),
-            selectedComponents: newSelection,
-            files: updatedManifestFiles,
-          }).catch(() => {});
-          p.cancel("Cancelled.");
-          process.exit(0);
-        }
-        updatedManifestFiles[relativePath] = { hash };
-        if (status === "written") {
+        if (enabledTools.length > 0) {
+          const { hash, destinations } = await installToDestinations(
+            projectRoot,
+            resolvedRoot,
+            relativePath,
+            content,
+            enabledTools
+          );
+          updatedManifestFiles[relativePath] = { hash, destinations };
           filesAdded++;
           p.log.success(`${pc.green("added")} ${relativePath}`);
+        } else {
+          const fullPath = resolve(projectRoot, relativePath);
+          if (!isSafePath(resolvedRoot, fullPath)) {
+            continue;
+          }
+
+          await mkdir(dirname(fullPath), { recursive: true });
+
+          const { status, hash } = await installFile(fullPath, relativePath, content);
+          if (status === "cancelled") {
+            await writeManifest(projectRoot, {
+              ...manifest,
+              updatedAt: new Date().toISOString(),
+              selectedComponents: newSelection,
+              files: updatedManifestFiles,
+            }).catch(() => {});
+            p.cancel("Cancelled.");
+            process.exit(0);
+          }
+          updatedManifestFiles[relativePath] = { hash };
+          if (status === "written") {
+            filesAdded++;
+            p.log.success(`${pc.green("added")} ${relativePath}`);
+          }
         }
       }
     }
@@ -134,59 +149,112 @@ export async function components() {
       const removedDirs = new Set();
 
       for (const [relativePath] of componentFiles) {
-        const fullPath = resolve(projectRoot, relativePath);
-        if (!isSafePath(resolvedRoot, fullPath)) {
-          continue;
-        }
+        const entry = manifest.files[relativePath];
 
-        if (!existsSync(fullPath)) {
-          delete updatedManifestFiles[relativePath];
-          continue;
-        }
+        if (enabledTools.length > 0 && entry?.destinations) {
+          // Remove from all tool destinations
+          let anyRemoved = false;
 
-        const locallyModified = await isLocallyModified(
-          projectRoot,
-          relativePath,
-          manifest
-        );
+          for (const [toolName, destPath] of Object.entries(entry.destinations)) {
+            const fullDest = resolve(projectRoot, destPath);
+            if (!isSafePath(resolvedRoot, fullDest)) continue;
 
-        if (locallyModified) {
-          const shouldRemove = await p.confirm({
-            message: `${relativePath} has local modifications. Remove it anyway?`,
-          });
+            if (!existsSync(fullDest)) {
+              anyRemoved = true;
+              continue;
+            }
 
-          if (p.isCancel(shouldRemove)) {
-            await writeManifest(projectRoot, {
-              ...manifest,
-              updatedAt: new Date().toISOString(),
-              selectedComponents: newSelection,
-              files: updatedManifestFiles,
-            }).catch(() => {});
-            p.cancel("Cancelled.");
-            process.exit(0);
+            const modified = await isDestinationModified(projectRoot, destPath, entry.hash);
+
+            if (modified) {
+              const shouldRemove = await p.confirm({
+                message: `${destPath} has local modifications. Remove it anyway?`,
+              });
+
+              if (p.isCancel(shouldRemove)) {
+                await writeManifest(projectRoot, {
+                  ...manifest,
+                  updatedAt: new Date().toISOString(),
+                  selectedComponents: newSelection,
+                  files: updatedManifestFiles,
+                }).catch(() => {});
+                p.cancel("Cancelled.");
+                process.exit(0);
+              }
+
+              if (!shouldRemove) {
+                p.log.warn(`${pc.dim("kept")} ${destPath}`);
+                continue;
+              }
+            }
+
+            await rm(fullDest);
+            anyRemoved = true;
+            p.log.success(`${pc.red("removed")} ${destPath}`);
+
+            let dir = dirname(fullDest);
+            while (dir.length > resolvedRoot.length) {
+              removedDirs.add(dir);
+              dir = dirname(dir);
+            }
           }
 
-          if (!shouldRemove) {
-            p.log.warn(`${pc.dim("kept")} ${relativePath}`);
+          if (anyRemoved) {
+            delete updatedManifestFiles[relativePath];
+            filesRemoved++;
+          }
+        } else {
+          const fullPath = resolve(projectRoot, relativePath);
+          if (!isSafePath(resolvedRoot, fullPath)) {
             continue;
           }
-        }
 
-        await rm(fullPath);
-        delete updatedManifestFiles[relativePath];
-        filesRemoved++;
-        p.log.success(`${pc.red("removed")} ${relativePath}`);
-        // Collect all ancestor dirs up to (but not including) resolvedRoot
-        let dir = dirname(fullPath);
-        while (dir.length > resolvedRoot.length) {
-          removedDirs.add(dir);
-          dir = dirname(dir);
+          if (!existsSync(fullPath)) {
+            delete updatedManifestFiles[relativePath];
+            continue;
+          }
+
+          const locallyModified = await isLocallyModified(
+            projectRoot,
+            relativePath,
+            manifest
+          );
+
+          if (locallyModified) {
+            const shouldRemove = await p.confirm({
+              message: `${relativePath} has local modifications. Remove it anyway?`,
+            });
+
+            if (p.isCancel(shouldRemove)) {
+              await writeManifest(projectRoot, {
+                ...manifest,
+                updatedAt: new Date().toISOString(),
+                selectedComponents: newSelection,
+                files: updatedManifestFiles,
+              }).catch(() => {});
+              p.cancel("Cancelled.");
+              process.exit(0);
+            }
+
+            if (!shouldRemove) {
+              p.log.warn(`${pc.dim("kept")} ${relativePath}`);
+              continue;
+            }
+          }
+
+          await rm(fullPath);
+          delete updatedManifestFiles[relativePath];
+          filesRemoved++;
+          p.log.success(`${pc.red("removed")} ${relativePath}`);
+          let dir = dirname(fullPath);
+          while (dir.length > resolvedRoot.length) {
+            removedDirs.add(dir);
+            dir = dirname(dir);
+          }
         }
       }
 
-      // Remove empty parent directories — only for actually removed files.
-      // These dirs are already known-safe (derived from fullPaths that passed isSafePath).
-      // Process deepest paths first so parents are empty by the time we reach them.
+      // Remove empty parent directories
       for (const dir of [...removedDirs].sort((a, b) => b.length - a.length)) {
         try {
           await rmdir(dir);
