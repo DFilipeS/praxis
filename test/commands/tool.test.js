@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, readlink, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -13,17 +13,9 @@ vi.mock("../../src/manifest.js", async (importOriginal) => {
     writeManifest: vi.fn(actual.writeManifest),
   };
 });
-vi.mock("../../src/adapters.js", async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    getAdapter: vi.fn(actual.getAdapter),
-  };
-});
 
 import * as p from "@clack/prompts";
 import { readManifest, writeManifest, hashContent } from "../../src/manifest.js";
-import { getAdapter } from "../../src/adapters.js";
 import { toolAdd, toolRemove, toolList } from "../../src/commands/tool.js";
 
 let tmpDir;
@@ -87,8 +79,7 @@ describe("toolAdd", () => {
     );
   });
 
-  it("generates .mcp.json and CLAUDE.md symlink for claude-code", async () => {
-    // Set up a skill with mcp.json
+  it("generates .mcp.json for claude-code", async () => {
     await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), { recursive: true });
     await writeFile(
       join(tmpDir, "praxis/skills/figma-to-code/mcp.json"),
@@ -109,10 +100,6 @@ describe("toolAdd", () => {
 
     await toolAdd(["claude-code"]);
 
-    // CLAUDE.md should be a symlink to AGENTS.md
-    const linkTarget = await readlink(join(tmpDir, "CLAUDE.md"));
-    expect(linkTarget).toBe("AGENTS.md");
-
     // .mcp.json should contain mcpServers
     const mcpContent = JSON.parse(
       await readFile(join(tmpDir, ".mcp.json"), "utf-8")
@@ -125,21 +112,6 @@ describe("toolAdd", () => {
       await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
     );
     expect(manifest.enabledTools).toContain("claude-code");
-  });
-
-  it("warns and skips CLAUDE.md when it exists as a regular file", async () => {
-    await writeFile(join(tmpDir, "CLAUDE.md"), "# My custom Claude instructions");
-
-    readManifest.mockResolvedValue(makeManifest());
-
-    await toolAdd(["claude-code"]);
-
-    // Should still be a regular file, not overwritten
-    const content = await readFile(join(tmpDir, "CLAUDE.md"), "utf-8");
-    expect(content).toBe("# My custom Claude instructions");
-    expect(p.log.warn).toHaveBeenCalledWith(
-      expect.stringContaining("already exists and is not a symlink")
-    );
   });
 
   it("generates .cursor/mcp.json with ${env:VAR} syntax", async () => {
@@ -216,6 +188,22 @@ describe("toolAdd", () => {
     expect(content.mcp).toBeTruthy();
   });
 
+  it("does not write MCP config for amp-code (no-op)", async () => {
+    readManifest.mockResolvedValue(makeManifest());
+
+    await toolAdd(["amp-code"]);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.enabledTools).toContain("amp-code");
+
+    // No MCP config file written
+    expect(p.outro).toHaveBeenCalledWith(
+      expect.stringContaining("0 file(s) written")
+    );
+  });
+
   it("shows interactive multi-select when no names given", async () => {
     readManifest.mockResolvedValue(makeManifest());
     p.multiselect = vi.fn().mockResolvedValue(["cursor"]);
@@ -266,19 +254,7 @@ describe("toolAdd", () => {
     );
   });
 
-  it("overwrites existing CLAUDE.md symlink", async () => {
-    const { symlink } = await import("node:fs/promises");
-    await symlink("OLD_TARGET.md", join(tmpDir, "CLAUDE.md"));
-
-    readManifest.mockResolvedValue(makeManifest());
-
-    await toolAdd(["claude-code"]);
-
-    const linkTarget = await readlink(join(tmpDir, "CLAUDE.md"));
-    expect(linkTarget).toBe("AGENTS.md");
-  });
-
-  it("overwrites existing opencode.json with invalid JSON via writeAdapterFiles", async () => {
+  it("overwrites existing opencode.json with invalid JSON", async () => {
     await writeFile(join(tmpDir, "opencode.json"), "not json {");
 
     readManifest.mockResolvedValue(makeManifest());
@@ -291,7 +267,7 @@ describe("toolAdd", () => {
     expect(content.mcp).toBeTruthy();
   });
 
-  it("merges mcp into existing opencode.json via writeAdapterFiles", async () => {
+  it("merges mcp into existing opencode.json via writeMcpConfigFile", async () => {
     await writeFile(
       join(tmpDir, "opencode.json"),
       JSON.stringify({ provider: { default: "anthropic" } }, null, 2) + "\n"
@@ -425,11 +401,8 @@ describe("toolRemove", () => {
     expect(manifest.enabledTools).not.toContain("cursor");
   });
 
-  it("removes CLAUDE.md symlink and .mcp.json", async () => {
+  it("removes .mcp.json for claude-code", async () => {
     await writeFile(join(tmpDir, ".mcp.json"), "{}");
-    // Create a symlink
-    const { symlink } = await import("node:fs/promises");
-    await symlink("AGENTS.md", join(tmpDir, "CLAUDE.md"));
 
     readManifest.mockResolvedValue(
       makeManifest({ enabledTools: ["claude-code"] })
@@ -437,8 +410,20 @@ describe("toolRemove", () => {
 
     await toolRemove(["claude-code"]);
 
-    expect(existsSync(join(tmpDir, "CLAUDE.md"))).toBe(false);
     expect(existsSync(join(tmpDir, ".mcp.json"))).toBe(false);
+  });
+
+  it("handles amp-code removal gracefully (no MCP config to remove)", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({ enabledTools: ["amp-code"] })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.enabledTools).not.toContain("amp-code");
   });
 });
 
@@ -456,63 +441,10 @@ describe("toolList", () => {
 
     await toolList();
 
-    // Should have called p.log.message for each adapter
-    expect(p.log.message).toHaveBeenCalledTimes(3);
+    // Should have called p.log.message for each adapter (4 now)
+    expect(p.log.message).toHaveBeenCalledTimes(4);
     expect(p.outro).toHaveBeenCalledWith(
-      expect.stringContaining("3 tool adapter(s)")
+      expect.stringContaining("4 tool adapter(s)")
     );
-  });
-});
-
-describe("security guards", () => {
-  it("skips entries with path traversal in writeAdapterFiles", async () => {
-    readManifest.mockResolvedValue(makeManifest());
-
-    // Return an adapter whose transform produces a traversal path
-    getAdapter.mockReturnValueOnce({
-      displayName: "Evil",
-      files: ["../../evil.json"],
-      transform: () => [
-        { path: "../../evil.json", type: "file", content: "{}\n" },
-      ],
-    });
-
-    await toolAdd(["cursor"]);
-
-    // The traversal path should not have been written
-    expect(existsSync(join(tmpDir, "../../evil.json"))).toBe(false);
-  });
-
-  it("skips entries with path traversal in removeAdapterFiles", async () => {
-    readManifest.mockResolvedValue(
-      makeManifest({ enabledTools: ["cursor"] })
-    );
-
-    getAdapter.mockReturnValueOnce({
-      displayName: "Evil",
-      files: ["../../evil.json"],
-      transform: () => [
-        { path: "../../evil.json", type: "file", content: "{}\n" },
-      ],
-    });
-
-    await toolRemove(["cursor"]);
-
-    // Should complete without error
-    expect(p.outro).toHaveBeenCalled();
-  });
-
-  it("returns 0 when adapter is null in removeAdapterFiles", async () => {
-    readManifest.mockResolvedValue(
-      makeManifest({ enabledTools: ["cursor"] })
-    );
-
-    // Simulate a stale/unknown adapter name in manifest
-    getAdapter.mockReturnValueOnce(null);
-
-    await toolRemove(["cursor"]);
-
-    // Should complete without crashing
-    expect(p.outro).toHaveBeenCalled();
   });
 });

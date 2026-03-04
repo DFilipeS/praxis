@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdir, mkdtemp, readFile, readlink, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -130,6 +130,7 @@ describe("collectMcpConfig", () => {
 
 describe("getAdapter", () => {
   it("returns adapter for known names", () => {
+    expect(getAdapter("amp-code")).not.toBeNull();
     expect(getAdapter("claude-code")).not.toBeNull();
     expect(getAdapter("cursor")).not.toBeNull();
     expect(getAdapter("opencode")).not.toBeNull();
@@ -141,36 +142,77 @@ describe("getAdapter", () => {
 });
 
 describe("listAdapters", () => {
-  it("returns all three adapters with name, displayName, and files", () => {
+  it("returns all four adapters with name and displayName", () => {
     const adapters = listAdapters();
-    expect(adapters).toHaveLength(3);
+    expect(adapters).toHaveLength(4);
 
     const names = adapters.map((a) => a.name);
+    expect(names).toContain("amp-code");
     expect(names).toContain("claude-code");
     expect(names).toContain("cursor");
     expect(names).toContain("opencode");
 
     for (const adapter of adapters) {
       expect(adapter.displayName).toBeTruthy();
-      expect(adapter.files.length).toBeGreaterThan(0);
     }
   });
 });
 
-describe("claude-code adapter transform", () => {
-  const adapter = getAdapter("claude-code");
+describe("amp-code adapter", () => {
+  const adapter = getAdapter("amp-code");
 
-  it("produces a symlink entry for CLAUDE.md", () => {
-    const results = adapter.transform({});
-    const symlink = results.find((r) => r.path === "CLAUDE.md");
-    expect(symlink).toEqual({
-      path: "CLAUDE.md",
-      type: "symlink",
-      target: "AGENTS.md",
-    });
+  it("maps praxis/ files to .agents/", () => {
+    expect(adapter.getDestinationPath("praxis/conventions.md")).toBe(
+      ".agents/conventions.md"
+    );
+    expect(adapter.getDestinationPath("praxis/skills/px-brainstorm/SKILL.md")).toBe(
+      ".agents/skills/px-brainstorm/SKILL.md"
+    );
+    expect(adapter.getDestinationPath("praxis/agents/reviewers/security.md")).toBe(
+      ".agents/agents/reviewers/security.md"
+    );
   });
 
-  it("produces .mcp.json wrapped in mcpServers", () => {
+  it("returns null for non-praxis files", () => {
+    expect(adapter.getDestinationPath("README.md")).toBeNull();
+  });
+
+  it("returns null for generateMcpConfig (reads per-skill mcp.json directly)", () => {
+    expect(adapter.generateMcpConfig({})).toBeNull();
+  });
+
+  it("returns null for getMcpConfigPath", () => {
+    expect(adapter.getMcpConfigPath()).toBeNull();
+  });
+
+  it("returns managed files from source files", () => {
+    const managed = adapter.getManagedFiles([
+      "praxis/conventions.md",
+      "praxis/skills/px-brainstorm/SKILL.md",
+    ]);
+    expect(managed).toEqual([
+      ".agents/conventions.md",
+      ".agents/skills/px-brainstorm/SKILL.md",
+    ]);
+  });
+});
+
+describe("claude-code adapter", () => {
+  const adapter = getAdapter("claude-code");
+
+  it("maps praxis/ files to .claude/", () => {
+    expect(adapter.getDestinationPath("praxis/conventions.md")).toBe(
+      ".claude/conventions.md"
+    );
+    expect(adapter.getDestinationPath("praxis/skills/px-brainstorm/SKILL.md")).toBe(
+      ".claude/skills/px-brainstorm/SKILL.md"
+    );
+    expect(adapter.getDestinationPath("praxis/agents/reviewers/security.md")).toBe(
+      ".claude/agents/reviewers/security.md"
+    );
+  });
+
+  it("generates .mcp.json with mcpServers", () => {
     const mcpConfig = {
       figma: {
         command: "npx",
@@ -179,40 +221,43 @@ describe("claude-code adapter transform", () => {
       },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const mcpFile = results.find((r) => r.path === ".mcp.json");
-
-    expect(mcpFile.type).toBe("file");
-    const parsed = JSON.parse(mcpFile.content);
+    const result = adapter.generateMcpConfig(mcpConfig);
+    expect(result.path).toBe(".mcp.json");
+    const parsed = JSON.parse(result.content);
     expect(parsed).toEqual({ mcpServers: mcpConfig });
   });
 
-  it("preserves ${VAR} env var syntax (same as Amp)", () => {
+  it("preserves ${VAR} env var syntax", () => {
     const mcpConfig = {
       test: { command: "cmd", args: [], env: { KEY: "${MY_VAR}" } },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const mcpFile = results.find((r) => r.path === ".mcp.json");
-    const parsed = JSON.parse(mcpFile.content);
-
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcpServers.test.env.KEY).toBe("${MY_VAR}");
   });
 });
 
-describe("cursor adapter transform", () => {
+describe("cursor adapter", () => {
   const adapter = getAdapter("cursor");
 
-  it("produces .cursor/mcp.json wrapped in mcpServers", () => {
+  it("maps praxis/ files to .cursor/", () => {
+    expect(adapter.getDestinationPath("praxis/conventions.md")).toBe(
+      ".cursor/conventions.md"
+    );
+    expect(adapter.getDestinationPath("praxis/skills/figma-to-code/SKILL.md")).toBe(
+      ".cursor/skills/figma-to-code/SKILL.md"
+    );
+  });
+
+  it("generates .cursor/mcp.json with mcpServers", () => {
     const mcpConfig = {
       figma: { command: "npx", args: [], env: {} },
     };
 
-    const results = adapter.transform(mcpConfig);
-    expect(results).toHaveLength(1);
-    expect(results[0].path).toBe(".cursor/mcp.json");
-
-    const parsed = JSON.parse(results[0].content);
+    const result = adapter.generateMcpConfig(mcpConfig);
+    expect(result.path).toBe(".cursor/mcp.json");
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcpServers).toBeTruthy();
   });
 
@@ -225,27 +270,36 @@ describe("cursor adapter transform", () => {
       },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const parsed = JSON.parse(results[0].content);
-
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcpServers.test.env.KEY).toBe("${env:MY_VAR}");
     expect(parsed.mcpServers.test.env.OTHER).toBe("${env:ANOTHER}");
   });
 });
 
-describe("opencode adapter transform", () => {
+describe("opencode adapter", () => {
   const adapter = getAdapter("opencode");
 
-  it("produces opencode.json wrapped in mcp key", () => {
+  it("maps praxis/ files to .opencode/", () => {
+    expect(adapter.getDestinationPath("praxis/conventions.md")).toBe(
+      ".opencode/conventions.md"
+    );
+    expect(adapter.getDestinationPath("praxis/skills/mobile-mcp/SKILL.md")).toBe(
+      ".opencode/skills/mobile-mcp/SKILL.md"
+    );
+    expect(adapter.getDestinationPath("praxis/agents/reviewers/security.md")).toBe(
+      ".opencode/agents/reviewers/security.md"
+    );
+  });
+
+  it("generates opencode.json with mcp key", () => {
     const mcpConfig = {
       figma: { command: "npx", args: ["-y", "figma-mcp"], env: {} },
     };
 
-    const results = adapter.transform(mcpConfig);
-    expect(results).toHaveLength(1);
-    expect(results[0].path).toBe("opencode.json");
-
-    const parsed = JSON.parse(results[0].content);
+    const result = adapter.generateMcpConfig(mcpConfig);
+    expect(result.path).toBe("opencode.json");
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcp).toBeTruthy();
   });
 
@@ -254,9 +308,8 @@ describe("opencode adapter transform", () => {
       figma: { command: "npx", args: ["-y", "figma-mcp"], env: {} },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const parsed = JSON.parse(results[0].content);
-
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcp.figma.command).toEqual(["npx", "-y", "figma-mcp"]);
   });
 
@@ -265,9 +318,8 @@ describe("opencode adapter transform", () => {
       figma: { command: "npx", args: [], env: {} },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const parsed = JSON.parse(results[0].content);
-
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcp.figma.type).toBe("local");
   });
 
@@ -276,9 +328,8 @@ describe("opencode adapter transform", () => {
       test: { command: "cmd", args: [], env: { KEY: "val" } },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const parsed = JSON.parse(results[0].content);
-
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcp.test.environment).toBeTruthy();
     expect(parsed.mcp.test.env).toBeUndefined();
   });
@@ -288,15 +339,14 @@ describe("opencode adapter transform", () => {
       test: { command: "cmd", args: [], env: { KEY: "${MY_VAR}" } },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const parsed = JSON.parse(results[0].content);
-
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcp.test.environment.KEY).toBe("{env:MY_VAR}");
   });
 
   it("sets mergeKey to mcp for opencode.json merge logic", () => {
-    const results = adapter.transform({});
-    expect(results[0].mergeKey).toBe("mcp");
+    const result = adapter.generateMcpConfig({});
+    expect(result.mergeKey).toBe("mcp");
   });
 
   it("handles entries without args", () => {
@@ -304,9 +354,8 @@ describe("opencode adapter transform", () => {
       test: { command: "cmd", env: {} },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const parsed = JSON.parse(results[0].content);
-
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcp.test.command).toEqual(["cmd"]);
   });
 
@@ -315,9 +364,8 @@ describe("opencode adapter transform", () => {
       test: { command: "cmd", args: ["-y"] },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const parsed = JSON.parse(results[0].content);
-
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
     expect(parsed.mcp.test.environment).toEqual({});
     expect(parsed.mcp.test.command).toEqual(["cmd", "-y"]);
   });
@@ -337,8 +385,8 @@ describe("env var transform edge cases", () => {
       },
     };
 
-    const results = adapter.transform(mcpConfig);
-    const parsed = JSON.parse(results[0].content);
+    const result = adapter.generateMcpConfig(mcpConfig);
+    const parsed = JSON.parse(result.content);
 
     // Numbers and booleans pass through unchanged
     expect(parsed.mcpServers.test.timeout).toBe(30);
@@ -369,33 +417,6 @@ describe("regenerateToolConfigs", () => {
     const manifest = { selectedComponents: { skills: [], reviewers: [] } };
     const result = await regenerateToolConfigs(tmpDir, manifest);
     expect(result).toEqual([]);
-  });
-
-  it("creates symlink for claude-code when CLAUDE.md is missing", async () => {
-    const manifest = {
-      enabledTools: ["claude-code"],
-      selectedComponents: { skills: [], reviewers: [] },
-    };
-
-    await regenerateToolConfigs(tmpDir, manifest);
-
-    const linkTarget = await readlink(join(tmpDir, "CLAUDE.md"));
-    expect(linkTarget).toBe("AGENTS.md");
-  });
-
-  it("skips symlink creation when CLAUDE.md already exists", async () => {
-    await writeFile(join(tmpDir, "CLAUDE.md"), "existing");
-
-    const manifest = {
-      enabledTools: ["claude-code"],
-      selectedComponents: { skills: [], reviewers: [] },
-    };
-
-    await regenerateToolConfigs(tmpDir, manifest);
-
-    // Should still be a regular file
-    const content = await readFile(join(tmpDir, "CLAUDE.md"), "utf-8");
-    expect(content).toBe("existing");
   });
 
   it("writes MCP config files for cursor", async () => {
@@ -466,5 +487,15 @@ describe("regenerateToolConfigs", () => {
 
     const result = await regenerateToolConfigs(tmpDir, manifest);
     expect(result).toEqual(["cursor", "opencode"]);
+  });
+
+  it("includes amp-code in regenerated list even though it has no MCP config", async () => {
+    const manifest = {
+      enabledTools: ["amp-code"],
+      selectedComponents: { skills: [], reviewers: [] },
+    };
+
+    const result = await regenerateToolConfigs(tmpDir, manifest);
+    expect(result).toEqual(["amp-code"]);
   });
 });
