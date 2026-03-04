@@ -45,7 +45,7 @@ export async function fetchTemplates() {
       filter: (path) => {
         const parts = path.split("/").slice(1);
         const relative = parts.join("/");
-        return relative.startsWith(".agents/") || relative === ".agents";
+        return relative.startsWith("praxis/") || relative === "praxis";
       },
     });
 
@@ -57,7 +57,7 @@ export async function fetchTemplates() {
     });
 
     const files = new Map();
-    await collectFiles(join(tmpDir, ".agents"), ".agents", files);
+    await collectFiles(join(tmpDir, "praxis"), "praxis", files);
     return files;
   } finally {
     await rm(tmpDir, { recursive: true, force: true });

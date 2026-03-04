@@ -29,12 +29,12 @@ describe('fetchTemplates', () => {
     globalThis.fetch = originalFetch;
   });
 
-  it('returns a Map of .agents/ files from a valid tarball', async () => {
+  it('returns a Map of praxis/ files from a valid tarball', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'test-tarball-'));
     try {
       const prefixDir = join(tmpDir, 'DFilipeS-praxis-abc123');
-      await mkdir(join(prefixDir, '.agents'), { recursive: true });
-      await writeFile(join(prefixDir, '.agents', 'test.md'), '# Test');
+      await mkdir(join(prefixDir, 'praxis'), { recursive: true });
+      await writeFile(join(prefixDir, 'praxis', 'test.md'), '# Test');
       await writeFile(join(prefixDir, 'README.md'), '# Readme');
 
       await createTar(
@@ -49,8 +49,8 @@ describe('fetchTemplates', () => {
       const files = await fetchTemplates();
 
       expect(files).toBeInstanceOf(Map);
-      expect(files.has('.agents/test.md')).toBe(true);
-      expect(files.get('.agents/test.md')).toBe('# Test');
+      expect(files.has('praxis/test.md')).toBe(true);
+      expect(files.get('praxis/test.md')).toBe('# Test');
       expect(files.has('README.md')).toBe(false);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
@@ -94,13 +94,13 @@ describe('fetchTemplates', () => {
     await expect(fetchTemplates()).rejects.toThrow('too large');
   });
 
-  it('filters out non-.agents/ files from the tarball', async () => {
+  it('filters out non-praxis/ files from the tarball', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'test-tarball-'));
     try {
       const prefixDir = join(tmpDir, 'DFilipeS-praxis-abc123');
-      await mkdir(join(prefixDir, '.agents', 'sub'), { recursive: true });
-      await writeFile(join(prefixDir, '.agents', 'skill.md'), '# Skill');
-      await writeFile(join(prefixDir, '.agents', 'sub', 'nested.md'), '# Nested');
+      await mkdir(join(prefixDir, 'praxis', 'sub'), { recursive: true });
+      await writeFile(join(prefixDir, 'praxis', 'skill.md'), '# Skill');
+      await writeFile(join(prefixDir, 'praxis', 'sub', 'nested.md'), '# Nested');
       await writeFile(join(prefixDir, 'README.md'), '# Readme');
 
       await createTar(
@@ -115,10 +115,10 @@ describe('fetchTemplates', () => {
       const files = await fetchTemplates();
 
       for (const key of files.keys()) {
-        expect(key.startsWith('.agents/')).toBe(true);
+        expect(key.startsWith('praxis/')).toBe(true);
       }
-      expect(files.has('.agents/skill.md')).toBe(true);
-      expect(files.has('.agents/sub/nested.md')).toBe(true);
+      expect(files.has('praxis/skill.md')).toBe(true);
+      expect(files.has('praxis/sub/nested.md')).toBe(true);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
