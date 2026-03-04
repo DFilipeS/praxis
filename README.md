@@ -56,7 +56,7 @@ Optional skills are project-specific. Select them during `praxis init` or change
 
 ### Reviewers
 
-All reviewers are optional. They run in parallel during the px-review skill. Add project-specific ones or remove built-in ones by editing `.agents/agents/reviewers/`.
+All reviewers are optional. They run in parallel during the px-review skill. Add project-specific ones or remove built-in ones by editing `praxis/agents/reviewers/`.
 
 | Reviewer              | Description                                                                     |
 | --------------------- | ------------------------------------------------------------------------------- |
@@ -88,7 +88,7 @@ The recommended way to install Praxis is via the CLI (requires Node.js 18+):
 npx github:DFilipeS/praxis init
 ```
 
-This creates the `.agents/` directory with all Praxis skills and agents, sets up `.ai-workflow/` directories, and writes a `.praxis-manifest.json` file to track installed files. Commit `.praxis-manifest.json` to version control so the CLI can detect changes on future updates.
+This creates the Praxis directory with all skills and agents, sets up `.ai-workflow/` directories, and writes a `.praxis-manifest.json` file to track installed files. Commit `.praxis-manifest.json` to version control so the CLI can detect changes on future updates.
 
 To update to the latest version:
 
@@ -114,10 +114,10 @@ npx github:DFilipeS/praxis status
 
 #### Manual installation
 
-If you don't use Node.js, copy the `.agents/` directory into your project:
+If you don't use Node.js, copy the `praxis/` directory into your project:
 
 ```bash
-cp -r path/to/praxis/.agents your-project/.agents
+cp -r path/to/praxis/praxis your-project/praxis
 ```
 
 Note that manual copies won't receive automatic updates.
@@ -137,7 +137,7 @@ Invoke skills by name through your AI agent:
 ## Project Structure
 
 ```
-.agents/
+praxis/
 ├── conventions.md                        # Shared conventions (directories, naming, tags, statuses)
 ├── reviewer-output-format.md             # Shared output format for all reviewers
 ├── agents/
@@ -189,9 +189,9 @@ Invoke skills by name through your AI agent:
 
 ### Adding project-specific reviewers
 
-Drop a `.md` file into `.agents/agents/reviewers/`. The px-review skill discovers and runs all reviewers in that directory automatically. Follow the output format in `.agents/reviewer-output-format.md`.
+Drop a `.md` file into `praxis/agents/reviewers/`. The px-review skill discovers and runs all reviewers in that directory automatically. Follow the output format in `praxis/reviewer-output-format.md`.
 
-Example: create `.agents/agents/reviewers/elixir-conventions.md` for Elixir-specific checks.
+Example: create `praxis/agents/reviewers/elixir-conventions.md` for Elixir-specific checks.
 
 ### Removing default reviewers
 

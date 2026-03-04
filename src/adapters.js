@@ -11,12 +11,12 @@ export async function collectMcpConfig(projectRoot, manifest) {
   if (!selected?.skills) return {};
 
   const merged = Object.create(null);
-  const expectedPrefix = resolve(projectRoot, ".agents", "skills") + sep;
+  const expectedPrefix = resolve(projectRoot, "praxis", "skills") + sep;
 
   for (const skillName of selected.skills) {
     const mcpPath = resolve(
       projectRoot,
-      ".agents",
+      "praxis",
       "skills",
       skillName,
       "mcp.json"
