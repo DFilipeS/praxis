@@ -425,6 +425,117 @@ describe("toolRemove", () => {
     );
     expect(manifest.enabledTools).not.toContain("amp-code");
   });
+
+  it("removes Praxis-managed files from tool directories", async () => {
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/conventions.md"), "core content");
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code"],
+        files: {
+          "praxis/conventions.md": {
+            hash: hashContent("core content"),
+            destinations: { "amp-code": ".agents/conventions.md" },
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    expect(existsSync(join(tmpDir, ".agents/conventions.md"))).toBe(false);
+    // Empty dir should be cleaned up
+    expect(existsSync(join(tmpDir, ".agents"))).toBe(false);
+    expect(p.log.success).toHaveBeenCalledWith(
+      expect.stringContaining("removed")
+    );
+  });
+
+  it("skips locally modified files with warning during tool remove", async () => {
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/conventions.md"), "locally modified");
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code"],
+        files: {
+          "praxis/conventions.md": {
+            hash: hashContent("original content"),
+            destinations: { "amp-code": ".agents/conventions.md" },
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    // File should be preserved
+    expect(existsSync(join(tmpDir, ".agents/conventions.md"))).toBe(true);
+    expect(p.log.warn).toHaveBeenCalledWith(
+      expect.stringContaining("locally modified")
+    );
+  });
+
+  it("updates manifest destinations when removing a tool", async () => {
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/conventions.md"), "core");
+    await mkdir(join(tmpDir, ".cursor"), { recursive: true });
+    await writeFile(join(tmpDir, ".cursor/conventions.md"), "core");
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code", "cursor"],
+        files: {
+          "praxis/conventions.md": {
+            hash: hashContent("core"),
+            destinations: {
+              "amp-code": ".agents/conventions.md",
+              cursor: ".cursor/conventions.md",
+            },
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    // Only amp-code files removed
+    expect(existsSync(join(tmpDir, ".agents/conventions.md"))).toBe(false);
+    expect(existsSync(join(tmpDir, ".cursor/conventions.md"))).toBe(true);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    // amp-code destination should be gone, cursor should remain
+    expect(manifest.files["praxis/conventions.md"].destinations["amp-code"]).toBeUndefined();
+    expect(manifest.files["praxis/conventions.md"].destinations.cursor).toBe(
+      ".cursor/conventions.md"
+    );
+  });
+
+  it("handles removal when managed files are already gone", async () => {
+    // No files on disk, but manifest tracks them
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code"],
+        files: {
+          "praxis/conventions.md": {
+            hash: hashContent("core"),
+            destinations: { "amp-code": ".agents/conventions.md" },
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.enabledTools).not.toContain("amp-code");
+    expect(manifest.files["praxis/conventions.md"].destinations["amp-code"]).toBeUndefined();
+  });
 });
 
 describe("toolList", () => {

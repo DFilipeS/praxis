@@ -3,7 +3,7 @@ import { lstat, readFile, rm, rmdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { readManifest, writeManifest } from "../manifest.js";
+import { isDestinationModified, readManifest, writeManifest } from "../manifest.js";
 import {
   collectMcpConfig,
   getAdapter,
@@ -191,7 +191,75 @@ export async function toolRemove(names) {
     }
   }
 
-  // Update manifest first so a subsequent run can reconcile if file removal fails
+  const updatedManifestFiles = { ...manifest.files };
+  let totalRemoved = 0;
+  let totalSkipped = 0;
+  const removedDirs = new Set();
+
+  // Remove Praxis-managed files from the tool's directories
+  for (const name of names) {
+    const adapter = getAdapter(name);
+    if (!adapter) continue;
+
+    for (const [sourcePath, entry] of Object.entries(manifest.files)) {
+      if (!entry.destinations || !entry.destinations[name]) continue;
+
+      const destPath = entry.destinations[name];
+      const fullDest = resolve(projectRoot, destPath);
+      if (!isSafePath(resolvedRoot, fullDest)) continue;
+
+      if (!existsSync(fullDest)) {
+        // File already gone — just clean up manifest
+        const newDests = { ...entry.destinations };
+        delete newDests[name];
+        updatedManifestFiles[sourcePath] = { ...entry, destinations: newDests };
+        continue;
+      }
+
+      const modified = await isDestinationModified(projectRoot, destPath, entry.hash);
+
+      if (modified) {
+        p.log.warn(`${pc.dim("skipped")} ${destPath} ${pc.yellow("(locally modified)")}`);
+        totalSkipped++;
+        continue;
+      }
+
+      await rm(fullDest);
+      totalRemoved++;
+      p.log.success(`${pc.red("removed")} ${destPath}`);
+
+      // Track dirs for cleanup
+      let dir = dirname(fullDest);
+      while (dir.length > resolvedRoot.length) {
+        removedDirs.add(dir);
+        dir = dirname(dir);
+      }
+
+      // Update manifest destinations
+      const newDests = { ...entry.destinations };
+      delete newDests[name];
+      updatedManifestFiles[sourcePath] = { ...entry, destinations: newDests };
+    }
+  }
+
+  // Clean up empty directories (deepest first)
+  for (const dir of [...removedDirs].sort((a, b) => b.length - a.length)) {
+    try {
+      await rmdir(dir);
+    } catch {
+      // Not empty or already gone
+    }
+  }
+
+  // Remove MCP configs
+  const mcpConfig = await collectMcpConfig(projectRoot, manifest);
+  for (const name of names) {
+    const adapter = getAdapter(name);
+    if (!adapter) continue;
+    await removeToolMcpConfig(projectRoot, resolvedRoot, adapter, mcpConfig);
+  }
+
+  // Update manifest: remove tool from enabledTools, update file destinations
   for (const name of names) {
     enabledTools.delete(name);
   }
@@ -199,20 +267,15 @@ export async function toolRemove(names) {
     ...manifest,
     updatedAt: new Date().toISOString(),
     enabledTools: [...enabledTools],
+    files: updatedManifestFiles,
   });
 
-  const mcpConfig = await collectMcpConfig(projectRoot, manifest);
-  let totalRemoved = 0;
-
-  for (const name of names) {
-    const adapter = getAdapter(name);
-    if (!adapter) continue;
-    const removed = await removeToolMcpConfig(projectRoot, resolvedRoot, adapter, mcpConfig);
-    totalRemoved += removed;
-  }
+  const parts = [];
+  if (totalRemoved > 0) parts.push(`${pc.red(totalRemoved)} removed`);
+  if (totalSkipped > 0) parts.push(`${pc.yellow(totalSkipped)} skipped`);
 
   p.outro(
-    `Done! ${pc.red(totalRemoved)} file(s) removed for ${names.join(", ")}.`
+    `Done! ${parts.length > 0 ? parts.join(", ") : "0 file(s) removed"} for ${names.join(", ")}.`
   );
 }
 
