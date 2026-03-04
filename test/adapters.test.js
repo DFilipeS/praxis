@@ -34,15 +34,15 @@ describe("collectMcpConfig", () => {
   });
 
   it("reads and merges mcp.json from selected skills", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), {
+    await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), {
       recursive: true,
     });
-    await mkdir(join(tmpDir, ".agents/skills/mobile-mcp"), {
+    await mkdir(join(tmpDir, "praxis/skills/mobile-mcp"), {
       recursive: true,
     });
 
     await writeFile(
-      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      join(tmpDir, "praxis/skills/figma-to-code/mcp.json"),
       JSON.stringify({
         figma: {
           command: "npx",
@@ -53,7 +53,7 @@ describe("collectMcpConfig", () => {
     );
 
     await writeFile(
-      join(tmpDir, ".agents/skills/mobile-mcp/mcp.json"),
+      join(tmpDir, "praxis/skills/mobile-mcp/mcp.json"),
       JSON.stringify({
         "mobile-mcp": {
           command: "npx",
@@ -85,9 +85,9 @@ describe("collectMcpConfig", () => {
   });
 
   it("skips skills with malformed mcp.json", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/bad-skill"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/bad-skill"), { recursive: true });
     await writeFile(
-      join(tmpDir, ".agents/skills/bad-skill/mcp.json"),
+      join(tmpDir, "praxis/skills/bad-skill/mcp.json"),
       "not valid json {"
     );
 
@@ -115,7 +115,7 @@ describe("collectMcpConfig", () => {
   });
 
   it("skips skills without mcp.json", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), {
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser"), {
       recursive: true,
     });
 
@@ -399,9 +399,9 @@ describe("regenerateToolConfigs", () => {
   });
 
   it("writes MCP config files for cursor", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), { recursive: true });
     await writeFile(
-      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      join(tmpDir, "praxis/skills/figma-to-code/mcp.json"),
       JSON.stringify({ figma: { command: "npx", args: ["-y", "figma"], env: { K: "${V}" } } })
     );
 

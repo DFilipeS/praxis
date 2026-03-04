@@ -39,8 +39,8 @@ beforeEach(async () => {
 
   fetchTemplates.mockResolvedValue(
     new Map([
-      [".agents/test.md", "# Test"],
-      [".agents/sub/nested.md", "# Nested"],
+      ["praxis/test.md", "# Test"],
+      ["praxis/sub/nested.md", "# Nested"],
     ])
   );
 });
@@ -54,11 +54,11 @@ describe("init", () => {
   it("creates files, directories, and manifest on fresh init", async () => {
     await init();
 
-    expect(await readFile(join(tmpDir, ".agents/test.md"), "utf-8")).toBe(
+    expect(await readFile(join(tmpDir, "praxis/test.md"), "utf-8")).toBe(
       "# Test"
     );
     expect(
-      await readFile(join(tmpDir, ".agents/sub/nested.md"), "utf-8")
+      await readFile(join(tmpDir, "praxis/sub/nested.md"), "utf-8")
     ).toBe("# Nested");
 
     expect(existsSync(join(tmpDir, ".ai-workflow/ideas"))).toBe(true);
@@ -73,10 +73,10 @@ describe("init", () => {
     expect(manifest.version).toBe("1.0.0");
     expect(manifest.installedAt).toBeTruthy();
     expect(manifest.updatedAt).toBe(manifest.installedAt);
-    expect(manifest.files[".agents/test.md"].hash).toBe(
+    expect(manifest.files["praxis/test.md"].hash).toBe(
       hashContent("# Test")
     );
-    expect(manifest.files[".agents/sub/nested.md"].hash).toBe(
+    expect(manifest.files["praxis/sub/nested.md"].hash).toBe(
       hashContent("# Nested")
     );
 
@@ -109,19 +109,19 @@ describe("init", () => {
   });
 
   it("counts existing file with same content as installed", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), "# Test");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), "# Test");
 
     await init();
 
-    expect(await readFile(join(tmpDir, ".agents/test.md"), "utf-8")).toBe(
+    expect(await readFile(join(tmpDir, "praxis/test.md"), "utf-8")).toBe(
       "# Test"
     );
 
     const manifest = JSON.parse(
       await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
     );
-    expect(manifest.files[".agents/test.md"]).toBeTruthy();
+    expect(manifest.files["praxis/test.md"]).toBeTruthy();
 
     expect(p.outro).toHaveBeenCalledWith(
       expect.stringContaining("2 files installed")
@@ -129,34 +129,34 @@ describe("init", () => {
   });
 
   it("overwrites existing file when user chooses overwrite", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), "local content");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), "local content");
 
     p.select = vi.fn().mockResolvedValue("overwrite");
 
     await init();
 
-    expect(await readFile(join(tmpDir, ".agents/test.md"), "utf-8")).toBe(
+    expect(await readFile(join(tmpDir, "praxis/test.md"), "utf-8")).toBe(
       "# Test"
     );
   });
 
   it("keeps existing file when user chooses skip", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), "local content");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), "local content");
 
     p.select = vi.fn().mockResolvedValue("skip");
 
     await init();
 
-    expect(await readFile(join(tmpDir, ".agents/test.md"), "utf-8")).toBe(
+    expect(await readFile(join(tmpDir, "praxis/test.md"), "utf-8")).toBe(
       "local content"
     );
 
     const manifest = JSON.parse(
       await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
     );
-    expect(manifest.files[".agents/test.md"].hash).toBe(
+    expect(manifest.files["praxis/test.md"].hash).toBe(
       hashContent("local content")
     );
 
@@ -164,8 +164,8 @@ describe("init", () => {
   });
 
   it("shows diff then overwrites when user chooses diff then overwrite", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), "old content");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), "old content");
 
     p.select = vi
       .fn()
@@ -175,14 +175,14 @@ describe("init", () => {
     await init();
 
     expect(p.log.info).toHaveBeenCalledWith(expect.stringContaining("---"));
-    expect(await readFile(join(tmpDir, ".agents/test.md"), "utf-8")).toBe(
+    expect(await readFile(join(tmpDir, "praxis/test.md"), "utf-8")).toBe(
       "# Test"
     );
   });
 
   it("shows diff then skips when user chooses diff then skip", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), "old content");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), "old content");
 
     p.select = vi
       .fn()
@@ -191,14 +191,14 @@ describe("init", () => {
 
     await init();
 
-    expect(await readFile(join(tmpDir, ".agents/test.md"), "utf-8")).toBe(
+    expect(await readFile(join(tmpDir, "praxis/test.md"), "utf-8")).toBe(
       "old content"
     );
   });
 
   it("cancels on first select", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), "local content");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), "local content");
 
     const cancelSymbol = Symbol("cancel");
     p.select = vi.fn().mockResolvedValue(cancelSymbol);
@@ -209,8 +209,8 @@ describe("init", () => {
   });
 
   it("cancels on second select after diff", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), "local content");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), "local content");
 
     const cancelSymbol = Symbol("cancel");
     p.select = vi
@@ -227,7 +227,7 @@ describe("init", () => {
     fetchTemplates.mockResolvedValue(
       new Map([
         ["../../../tmp/praxis-traversal-test", "malicious"],
-        [".agents/test.md", "# Test"],
+        ["praxis/test.md", "# Test"],
       ])
     );
 
@@ -243,7 +243,7 @@ describe("init", () => {
     expect(
       manifest.files["../../../tmp/praxis-traversal-test"]
     ).toBeUndefined();
-    expect(manifest.files[".agents/test.md"]).toBeTruthy();
+    expect(manifest.files["praxis/test.md"]).toBeTruthy();
   });
 
   it("does not overwrite existing tags file", async () => {
@@ -260,11 +260,11 @@ describe("init", () => {
   it("presents groupMultiselect and installs only selected optional components", async () => {
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "# Core"],
-        [".agents/skills/px-brainstorm/SKILL.md", "# Core skill"],
-        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
-        [".agents/skills/figma-to-code/SKILL.md", '---\ndescription: "Figma"\n---'],
-        [".agents/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
+        ["praxis/conventions.md", "# Core"],
+        ["praxis/skills/px-brainstorm/SKILL.md", "# Core skill"],
+        ["praxis/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        ["praxis/skills/figma-to-code/SKILL.md", '---\ndescription: "Figma"\n---'],
+        ["praxis/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
       ])
     );
 
@@ -274,15 +274,15 @@ describe("init", () => {
     await init();
 
     // Core files always installed
-    expect(existsSync(join(tmpDir, ".agents/conventions.md"))).toBe(true);
-    expect(existsSync(join(tmpDir, ".agents/skills/px-brainstorm/SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, "praxis/conventions.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, "praxis/skills/px-brainstorm/SKILL.md"))).toBe(true);
 
     // Selected optional components installed
-    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
-    expect(existsSync(join(tmpDir, ".agents/agents/reviewers/security.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, "praxis/skills/agent-browser/SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, "praxis/agents/reviewers/security.md"))).toBe(true);
 
     // Unselected optional component not installed
-    expect(existsSync(join(tmpDir, ".agents/skills/figma-to-code/SKILL.md"))).toBe(false);
+    expect(existsSync(join(tmpDir, "praxis/skills/figma-to-code/SKILL.md"))).toBe(false);
 
     // Manifest includes selectedComponents
     const manifest = JSON.parse(
@@ -297,9 +297,9 @@ describe("init", () => {
   it("installs all components when all selected", async () => {
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "# Core"],
-        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
-        [".agents/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
+        ["praxis/conventions.md", "# Core"],
+        ["praxis/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        ["praxis/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
       ])
     );
 
@@ -307,14 +307,14 @@ describe("init", () => {
 
     await init();
 
-    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
-    expect(existsSync(join(tmpDir, ".agents/agents/reviewers/security.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, "praxis/skills/agent-browser/SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, "praxis/agents/reviewers/security.md"))).toBe(true);
   });
 
   it("cancels on groupMultiselect cancel", async () => {
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        ["praxis/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
       ])
     );
 
@@ -329,8 +329,8 @@ describe("init", () => {
   it("skips groupMultiselect when no optional components exist", async () => {
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "# Core"],
-        [".agents/skills/px-brainstorm/SKILL.md", "# Core skill"],
+        ["praxis/conventions.md", "# Core"],
+        ["praxis/skills/px-brainstorm/SKILL.md", "# Core skill"],
       ])
     );
 

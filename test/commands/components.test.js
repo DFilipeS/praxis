@@ -53,10 +53,10 @@ function makeManifest(files, selectedComponents = { skills: [], reviewers: [] })
   };
 }
 
-const CORE_FILE = ".agents/conventions.md";
-const BROWSER_SKILL = ".agents/skills/agent-browser/SKILL.md";
-const FIGMA_SKILL = ".agents/skills/figma-to-code/SKILL.md";
-const SECURITY_REVIEWER = ".agents/agents/reviewers/security.md";
+const CORE_FILE = "praxis/conventions.md";
+const BROWSER_SKILL = "praxis/skills/agent-browser/SKILL.md";
+const FIGMA_SKILL = "praxis/skills/figma-to-code/SKILL.md";
+const SECURITY_REVIEWER = "praxis/agents/reviewers/security.md";
 
 const defaultTemplates = new Map([
   [CORE_FILE, "# Core"],
@@ -91,7 +91,7 @@ beforeEach(async () => {
   fetchTemplates.mockResolvedValue(defaultTemplates);
 
   // Set up a project root with core file
-  await mkdir(join(tmpDir, ".agents"), { recursive: true });
+  await mkdir(join(tmpDir, "praxis"), { recursive: true });
   await writeFile(join(tmpDir, CORE_FILE), "# Core");
 });
 
@@ -137,7 +137,7 @@ describe("components", () => {
 
   it("removes deselected component files and reports file count", async () => {
     // Start with agent-browser selected and installed
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), '---\ndescription: "Browser automation"\n---');
 
     readManifest.mockResolvedValue(
@@ -166,7 +166,7 @@ describe("components", () => {
   });
 
   it("warns before removing locally modified file", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), "locally modified content");
 
     readManifest.mockResolvedValue(
@@ -192,7 +192,7 @@ describe("components", () => {
   });
 
   it("keeps locally modified file if user declines removal", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), "locally modified content");
 
     readManifest.mockResolvedValue(
@@ -246,7 +246,7 @@ describe("components", () => {
 
   it("does not count file as added when content already matches", async () => {
     // Pre-create BROWSER_SKILL with the exact same content as the template
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), '---\ndescription: "Browser automation"\n---');
 
     readManifest.mockResolvedValue(
@@ -296,8 +296,8 @@ describe("components", () => {
   });
 
   it("blocks path traversal in additions loop", async () => {
-    // 4 levels of ".." are needed to escape tmpDir from inside .agents/skills/agent-browser/
-    const traversalPath = ".agents/skills/agent-browser/../../../../evil";
+    // 4 levels of ".." are needed to escape tmpDir from inside praxis/skills/agent-browser/
+    const traversalPath = "praxis/skills/agent-browser/../../../../evil";
     fetchTemplates.mockResolvedValue(
       new Map([
         [CORE_FILE, "# Core"],
@@ -319,7 +319,7 @@ describe("components", () => {
   });
 
   it("blocks path traversal in removals loop", async () => {
-    const traversalPath = ".agents/skills/agent-browser/../../../../evil";
+    const traversalPath = "praxis/skills/agent-browser/../../../../evil";
     fetchTemplates.mockResolvedValue(
       new Map([
         [CORE_FILE, "# Core"],
@@ -328,7 +328,7 @@ describe("components", () => {
       ])
     );
 
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), '---\ndescription: "Browser automation"\n---');
 
     readManifest.mockResolvedValue(
@@ -419,7 +419,7 @@ describe("components", () => {
   });
 
   it("cancels on confirm cancel when removing locally modified file", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), "locally modified content");
 
     readManifest.mockResolvedValue(
@@ -459,7 +459,7 @@ describe("components", () => {
   });
 
   it("swallows writeManifest failure on removals cancel", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), "locally modified content");
 
     readManifest.mockResolvedValue(
@@ -485,7 +485,7 @@ describe("components", () => {
   });
 
   it("sorts and removes empty directories after removing multi-file component", async () => {
-    const BROWSER_HELPER = ".agents/skills/agent-browser/helpers/utils.md";
+    const BROWSER_HELPER = "praxis/skills/agent-browser/helpers/utils.md";
     fetchTemplates.mockResolvedValue(
       new Map([
         [CORE_FILE, "# Core"],
@@ -496,7 +496,7 @@ describe("components", () => {
       ])
     );
 
-    await mkdir(join(tmpDir, ".agents/skills/agent-browser/helpers"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/agent-browser/helpers"), { recursive: true });
     await writeFile(join(tmpDir, BROWSER_SKILL), '---\ndescription: "Browser automation"\n---');
     await writeFile(join(tmpDir, BROWSER_HELPER), "# Utils");
 
@@ -518,8 +518,8 @@ describe("components", () => {
     expect(existsSync(join(tmpDir, BROWSER_SKILL))).toBe(false);
     expect(existsSync(join(tmpDir, BROWSER_HELPER))).toBe(false);
     // Nested helper dir removed first, then parent dir
-    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/helpers"))).toBe(false);
-    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser"))).toBe(false);
+    expect(existsSync(join(tmpDir, "praxis/skills/agent-browser/helpers"))).toBe(false);
+    expect(existsSync(join(tmpDir, "praxis/skills/agent-browser"))).toBe(false);
   });
 
   it("writes partial manifest state on unexpected error during additions", async () => {
@@ -545,7 +545,7 @@ describe("components", () => {
     fetchTemplates.mockResolvedValue(
       new Map([
         [CORE_FILE, "# Core"],
-        [".agents/skills/px-brainstorm/SKILL.md", "# Core skill"],
+        ["praxis/skills/px-brainstorm/SKILL.md", "# Core skill"],
       ])
     );
 
@@ -562,7 +562,7 @@ describe("components", () => {
   });
 
   it("regenerates tool configs when adding a skill with mcp.json and tools are enabled", async () => {
-    const FIGMA_MCP = ".agents/skills/figma-to-code/mcp.json";
+    const FIGMA_MCP = "praxis/skills/figma-to-code/mcp.json";
     const figmaMcp = JSON.stringify({
       figma: {
         command: "npx",
@@ -582,8 +582,8 @@ describe("components", () => {
     );
 
     // Set up figma mcp.json on disk (it gets installed by the component add)
-    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/skills/figma-to-code/mcp.json"), figmaMcp);
+    await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/skills/figma-to-code/mcp.json"), figmaMcp);
 
     // cursor is already enabled
     readManifest.mockResolvedValue(

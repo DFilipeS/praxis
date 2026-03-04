@@ -89,9 +89,9 @@ describe("toolAdd", () => {
 
   it("generates .mcp.json and CLAUDE.md symlink for claude-code", async () => {
     // Set up a skill with mcp.json
-    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), { recursive: true });
     await writeFile(
-      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      join(tmpDir, "praxis/skills/figma-to-code/mcp.json"),
       JSON.stringify({
         figma: {
           command: "npx",
@@ -143,9 +143,9 @@ describe("toolAdd", () => {
   });
 
   it("generates .cursor/mcp.json with ${env:VAR} syntax", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), { recursive: true });
     await writeFile(
-      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      join(tmpDir, "praxis/skills/figma-to-code/mcp.json"),
       JSON.stringify({
         figma: {
           command: "npx",
@@ -170,9 +170,9 @@ describe("toolAdd", () => {
   });
 
   it("generates opencode.json with correct format", async () => {
-    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), { recursive: true });
     await writeFile(
-      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      join(tmpDir, "praxis/skills/figma-to-code/mcp.json"),
       JSON.stringify({
         figma: {
           command: "npx",
@@ -297,9 +297,9 @@ describe("toolAdd", () => {
       JSON.stringify({ provider: { default: "anthropic" } }, null, 2) + "\n"
     );
 
-    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), { recursive: true });
     await writeFile(
-      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      join(tmpDir, "praxis/skills/figma-to-code/mcp.json"),
       JSON.stringify({ figma: { command: "npx", args: [], env: {} } })
     );
 

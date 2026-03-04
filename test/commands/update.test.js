@@ -97,12 +97,12 @@ describe("update command", () => {
 
   it("reports everything up to date when nothing changed", async () => {
     const content = "content A";
-    await writeTestFile(".agents/a.md", content);
+    await writeTestFile("praxis/a.md", content);
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent(content) } })
+      makeManifest({ "praxis/a.md": { hash: hashContent(content) } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", content]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", content]]));
 
     await update();
 
@@ -113,21 +113,21 @@ describe("update command", () => {
 
   it("adds new files", async () => {
     const oldContent = "old content";
-    await writeTestFile(".agents/old.md", oldContent);
+    await writeTestFile("praxis/old.md", oldContent);
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/old.md": { hash: hashContent(oldContent) } })
+      makeManifest({ "praxis/old.md": { hash: hashContent(oldContent) } })
     );
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/old.md", oldContent],
-        [".agents/new.md", "new content"],
+        ["praxis/old.md", oldContent],
+        ["praxis/new.md", "new content"],
       ])
     );
 
     await update();
 
-    const written = await readFile(join(tmpDir, ".agents/new.md"), "utf-8");
+    const written = await readFile(join(tmpDir, "praxis/new.md"), "utf-8");
     expect(written).toBe("new content");
     expect(p.log.success).toHaveBeenCalledWith(
       expect.stringContaining("added")
@@ -136,27 +136,27 @@ describe("update command", () => {
 
   it("skips new file when it already exists on disk and user chooses skip", async () => {
     // File exists locally but is not yet tracked in the manifest
-    await writeTestFile(".agents/new.md", "local version");
+    await writeTestFile("praxis/new.md", "local version");
 
     readManifest.mockResolvedValue(makeManifest({}));
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/new.md", "upstream content"]])
+      new Map([["praxis/new.md", "upstream content"]])
     );
     p.select.mockResolvedValue("skip");
 
     await update();
 
-    const content = await readFile(join(tmpDir, ".agents/new.md"), "utf-8");
+    const content = await readFile(join(tmpDir, "praxis/new.md"), "utf-8");
     expect(content).toBe("local version");
     expect(p.log.warn).toHaveBeenCalledWith(expect.stringContaining("skipped"));
   });
 
   it("cancels when user cancels conflict prompt for a new file", async () => {
-    await writeTestFile(".agents/new.md", "local version");
+    await writeTestFile("praxis/new.md", "local version");
 
     readManifest.mockResolvedValue(makeManifest({}));
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/new.md", "upstream content"]])
+      new Map([["praxis/new.md", "upstream content"]])
     );
     const cancelSymbol = Symbol("cancel");
     p.select.mockResolvedValue(cancelSymbol);
@@ -167,22 +167,22 @@ describe("update command", () => {
   });
 
   it("does not update changed file when it belongs to a deselected skill component", async () => {
-    await writeTestFile(".agents/skills/agent-browser/SKILL.md", "old");
+    await writeTestFile("praxis/skills/agent-browser/SKILL.md", "old");
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/skills/agent-browser/SKILL.md": { hash: hashContent("old") },
+        "praxis/skills/agent-browser/SKILL.md": { hash: hashContent("old") },
       }),
       selectedComponents: { skills: [], reviewers: [] },
     });
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/skills/agent-browser/SKILL.md", "updated"]])
+      new Map([["praxis/skills/agent-browser/SKILL.md", "updated"]])
     );
 
     await update();
 
     const content = await readFile(
-      join(tmpDir, ".agents/skills/agent-browser/SKILL.md"),
+      join(tmpDir, "praxis/skills/agent-browser/SKILL.md"),
       "utf-8"
     );
     expect(content).toBe("old");
@@ -190,22 +190,22 @@ describe("update command", () => {
   });
 
   it("does not update changed file when it belongs to a deselected reviewer component", async () => {
-    await writeTestFile(".agents/agents/reviewers/security.md", "old review");
+    await writeTestFile("praxis/agents/reviewers/security.md", "old review");
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/agents/reviewers/security.md": { hash: hashContent("old review") },
+        "praxis/agents/reviewers/security.md": { hash: hashContent("old review") },
       }),
       selectedComponents: { skills: [], reviewers: [] },
     });
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/agents/reviewers/security.md", "updated review"]])
+      new Map([["praxis/agents/reviewers/security.md", "updated review"]])
     );
 
     await update();
 
     const content = await readFile(
-      join(tmpDir, ".agents/agents/reviewers/security.md"),
+      join(tmpDir, "praxis/agents/reviewers/security.md"),
       "utf-8"
     );
     expect(content).toBe("old review");
@@ -214,10 +214,10 @@ describe("update command", () => {
 
   it("silently tracks a new file when it already exists on disk with matching content", async () => {
     const content = "upstream content";
-    await writeTestFile(".agents/new.md", content);
+    await writeTestFile("praxis/new.md", content);
 
     readManifest.mockResolvedValue(makeManifest({}));
-    fetchTemplates.mockResolvedValue(new Map([[".agents/new.md", content]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/new.md", content]]));
 
     await update();
 
@@ -227,20 +227,20 @@ describe("update command", () => {
     const manifest = JSON.parse(
       await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
     );
-    expect(manifest.files[".agents/new.md"]).toBeTruthy();
+    expect(manifest.files["praxis/new.md"]).toBeTruthy();
   });
 
   it("updates changed files that are not locally modified", async () => {
-    await writeTestFile(".agents/a.md", "v1");
+    await writeTestFile("praxis/a.md", "v1");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
 
     await update();
 
-    const written = await readFile(join(tmpDir, ".agents/a.md"), "utf-8");
+    const written = await readFile(join(tmpDir, "praxis/a.md"), "utf-8");
     expect(written).toBe("v2");
     expect(p.log.success).toHaveBeenCalledWith(
       expect.stringContaining("updated")
@@ -248,46 +248,46 @@ describe("update command", () => {
   });
 
   it("updates changed files when file does not exist on disk", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
 
     await update();
 
-    const written = await readFile(join(tmpDir, ".agents/a.md"), "utf-8");
+    const written = await readFile(join(tmpDir, "praxis/a.md"), "utf-8");
     expect(written).toBe("v2");
   });
 
   it("overwrites locally modified file when user chooses overwrite", async () => {
-    await writeTestFile(".agents/a.md", "local changes");
+    await writeTestFile("praxis/a.md", "local changes");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
     p.select.mockResolvedValue("overwrite");
 
     await update();
 
-    const written = await readFile(join(tmpDir, ".agents/a.md"), "utf-8");
+    const written = await readFile(join(tmpDir, "praxis/a.md"), "utf-8");
     expect(written).toBe("v2");
   });
 
   it("skips locally modified file when user chooses skip", async () => {
-    await writeTestFile(".agents/a.md", "local changes");
+    await writeTestFile("praxis/a.md", "local changes");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
     p.select.mockResolvedValue("skip");
 
     await update();
 
-    const written = await readFile(join(tmpDir, ".agents/a.md"), "utf-8");
+    const written = await readFile(join(tmpDir, "praxis/a.md"), "utf-8");
     expect(written).toBe("local changes");
     expect(p.log.warn).toHaveBeenCalledWith(
       expect.stringContaining("skipped")
@@ -295,12 +295,12 @@ describe("update command", () => {
   });
 
   it("shows diff then overwrites when user chooses diff then overwrite", async () => {
-    await writeTestFile(".agents/a.md", "local changes");
+    await writeTestFile("praxis/a.md", "local changes");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
     p.select
       .mockResolvedValueOnce("diff")
       .mockResolvedValueOnce("overwrite");
@@ -308,32 +308,32 @@ describe("update command", () => {
     await update();
 
     expect(p.log.info).toHaveBeenCalledWith(expect.stringContaining("---"));
-    const written = await readFile(join(tmpDir, ".agents/a.md"), "utf-8");
+    const written = await readFile(join(tmpDir, "praxis/a.md"), "utf-8");
     expect(written).toBe("v2");
   });
 
   it("shows diff then skips when user chooses diff then skip", async () => {
-    await writeTestFile(".agents/a.md", "local changes");
+    await writeTestFile("praxis/a.md", "local changes");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
     p.select.mockResolvedValueOnce("diff").mockResolvedValueOnce("skip");
 
     await update();
 
-    const written = await readFile(join(tmpDir, ".agents/a.md"), "utf-8");
+    const written = await readFile(join(tmpDir, "praxis/a.md"), "utf-8");
     expect(written).toBe("local changes");
   });
 
   it("exits on cancel at first select for changed files", async () => {
-    await writeTestFile(".agents/a.md", "local changes");
+    await writeTestFile("praxis/a.md", "local changes");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
     p.select.mockResolvedValue(Symbol("cancel"));
     p.isCancel = vi.fn((v) => typeof v === "symbol");
 
@@ -341,12 +341,12 @@ describe("update command", () => {
   });
 
   it("exits on cancel at second select after diff", async () => {
-    await writeTestFile(".agents/a.md", "local changes");
+    await writeTestFile("praxis/a.md", "local changes");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
     p.select
       .mockResolvedValueOnce("diff")
       .mockResolvedValueOnce(Symbol("cancel"));
@@ -358,7 +358,7 @@ describe("update command", () => {
   it("removes manifest entry when removed file does not exist on disk", async () => {
     readManifest.mockResolvedValue(
       makeManifest({
-        ".agents/gone.md": { hash: hashContent("gone content") },
+        "praxis/gone.md": { hash: hashContent("gone content") },
       })
     );
     fetchTemplates.mockResolvedValue(new Map());
@@ -368,22 +368,22 @@ describe("update command", () => {
     const manifest = JSON.parse(
       await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
     );
-    expect(manifest.files).not.toHaveProperty(".agents/gone.md");
+    expect(manifest.files).not.toHaveProperty("praxis/gone.md");
   });
 
   it("deletes removed file when user confirms", async () => {
     const content = "old content";
-    await writeTestFile(".agents/old.md", content);
+    await writeTestFile("praxis/old.md", content);
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/old.md": { hash: hashContent(content) } })
+      makeManifest({ "praxis/old.md": { hash: hashContent(content) } })
     );
     fetchTemplates.mockResolvedValue(new Map());
     p.confirm.mockResolvedValue(true);
 
     await update();
 
-    expect(existsSync(join(tmpDir, ".agents/old.md"))).toBe(false);
+    expect(existsSync(join(tmpDir, "praxis/old.md"))).toBe(false);
     expect(p.log.success).toHaveBeenCalledWith(
       expect.stringContaining("removed")
     );
@@ -391,27 +391,27 @@ describe("update command", () => {
 
   it("keeps removed file when user declines", async () => {
     const content = "old content";
-    await writeTestFile(".agents/old.md", content);
+    await writeTestFile("praxis/old.md", content);
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/old.md": { hash: hashContent(content) } })
+      makeManifest({ "praxis/old.md": { hash: hashContent(content) } })
     );
     fetchTemplates.mockResolvedValue(new Map());
     p.confirm.mockResolvedValue(false);
 
     await update();
 
-    expect(existsSync(join(tmpDir, ".agents/old.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, "praxis/old.md"))).toBe(true);
     expect(p.log.warn).toHaveBeenCalledWith(
       expect.stringContaining("skipped")
     );
   });
 
   it("shows locally modified warning for removed files", async () => {
-    await writeTestFile(".agents/old.md", "modified content");
+    await writeTestFile("praxis/old.md", "modified content");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/old.md": { hash: hashContent("original") } })
+      makeManifest({ "praxis/old.md": { hash: hashContent("original") } })
     );
     fetchTemplates.mockResolvedValue(new Map());
     p.confirm.mockResolvedValue(true);
@@ -427,10 +427,10 @@ describe("update command", () => {
 
   it("exits on cancel at confirm for removed files", async () => {
     const content = "old content";
-    await writeTestFile(".agents/old.md", content);
+    await writeTestFile("praxis/old.md", content);
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/old.md": { hash: hashContent(content) } })
+      makeManifest({ "praxis/old.md": { hash: hashContent(content) } })
     );
     fetchTemplates.mockResolvedValue(new Map());
     p.confirm.mockResolvedValue(Symbol("cancel"));
@@ -476,20 +476,20 @@ describe("update command", () => {
 
   it("summary includes all categories", async () => {
     const oldContent = "old content";
-    await writeTestFile(".agents/existing.md", oldContent);
+    await writeTestFile("praxis/existing.md", oldContent);
     const removableContent = "removable";
-    await writeTestFile(".agents/removable.md", removableContent);
+    await writeTestFile("praxis/removable.md", removableContent);
 
     readManifest.mockResolvedValue(
       makeManifest({
-        ".agents/existing.md": { hash: hashContent(oldContent) },
-        ".agents/removable.md": { hash: hashContent(removableContent) },
+        "praxis/existing.md": { hash: hashContent(oldContent) },
+        "praxis/removable.md": { hash: hashContent(removableContent) },
       })
     );
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/existing.md", "updated content"],
-        [".agents/brand-new.md", "brand new"],
+        ["praxis/existing.md", "updated content"],
+        ["praxis/brand-new.md", "brand new"],
       ])
     );
     p.confirm.mockResolvedValue(true);
@@ -502,54 +502,54 @@ describe("update command", () => {
   });
 
   it("writes updated manifest after changes", async () => {
-    await writeTestFile(".agents/a.md", "v1");
+    await writeTestFile("praxis/a.md", "v1");
 
     readManifest.mockResolvedValue(
-      makeManifest({ ".agents/a.md": { hash: hashContent("v1") } })
+      makeManifest({ "praxis/a.md": { hash: hashContent("v1") } })
     );
-    fetchTemplates.mockResolvedValue(new Map([[".agents/a.md", "v2"]]));
+    fetchTemplates.mockResolvedValue(new Map([["praxis/a.md", "v2"]]));
 
     await update();
 
     const manifest = JSON.parse(
       await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
     );
-    expect(manifest.files[".agents/a.md"].hash).toBe(hashContent("v2"));
+    expect(manifest.files["praxis/a.md"].hash).toBe(hashContent("v2"));
     expect(manifest.updatedAt).not.toBe("2026-01-01T00:00:00Z");
   });
 
   it("does not install new optional component files that are not selected", async () => {
     readManifest.mockResolvedValue({
-      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),
+      ...makeManifest({ "praxis/conventions.md": { hash: hashContent("core") } }),
       selectedComponents: { skills: [], reviewers: [] },
     });
-    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile("praxis/conventions.md", "core");
 
     // Upstream now has a new optional skill that user hasn't selected
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "core"],
-        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        ["praxis/conventions.md", "core"],
+        ["praxis/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
       ])
     );
 
     await update();
 
-    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(false);
+    expect(existsSync(join(tmpDir, "praxis/skills/agent-browser/SKILL.md"))).toBe(false);
   });
 
   it("logs a nudge when new optional components are available but not selected", async () => {
     readManifest.mockResolvedValue({
-      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),
+      ...makeManifest({ "praxis/conventions.md": { hash: hashContent("core") } }),
       selectedComponents: { skills: [], reviewers: [] },
     });
-    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile("praxis/conventions.md", "core");
 
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "core"],
-        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
-        [".agents/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
+        ["praxis/conventions.md", "core"],
+        ["praxis/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        ["praxis/agents/reviewers/security.md", '---\ndescription: "Security"\n---'],
       ])
     );
 
@@ -565,36 +565,36 @@ describe("update command", () => {
 
   it("installs new optional component files when they are selected", async () => {
     readManifest.mockResolvedValue({
-      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),
+      ...makeManifest({ "praxis/conventions.md": { hash: hashContent("core") } }),
       selectedComponents: { skills: ["agent-browser"], reviewers: [] },
     });
-    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile("praxis/conventions.md", "core");
 
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "core"],
-        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        ["praxis/conventions.md", "core"],
+        ["praxis/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
       ])
     );
 
     await update();
 
-    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, "praxis/skills/agent-browser/SKILL.md"))).toBe(true);
   });
 
   it("logs a nudge after update when there are changes and new unselected components", async () => {
     // Has a file that needs updating AND a new unselected optional component
-    await writeTestFile(".agents/conventions.md", "v1");
+    await writeTestFile("praxis/conventions.md", "v1");
 
     readManifest.mockResolvedValue({
-      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("v1") } }),
+      ...makeManifest({ "praxis/conventions.md": { hash: hashContent("v1") } }),
       selectedComponents: { skills: [], reviewers: [] },
     });
 
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "v2"],
-        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        ["praxis/conventions.md", "v2"],
+        ["praxis/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
       ])
     );
 
@@ -607,22 +607,22 @@ describe("update command", () => {
   });
 
   it("updates changed file when it belongs to a selected optional component", async () => {
-    await writeTestFile(".agents/skills/agent-browser/SKILL.md", "v1");
+    await writeTestFile("praxis/skills/agent-browser/SKILL.md", "v1");
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/skills/agent-browser/SKILL.md": { hash: hashContent("v1") },
+        "praxis/skills/agent-browser/SKILL.md": { hash: hashContent("v1") },
       }),
       selectedComponents: { skills: ["agent-browser"], reviewers: [] },
     });
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/skills/agent-browser/SKILL.md", "v2"]])
+      new Map([["praxis/skills/agent-browser/SKILL.md", "v2"]])
     );
 
     await update();
 
     const content = await readFile(
-      join(tmpDir, ".agents/skills/agent-browser/SKILL.md"),
+      join(tmpDir, "praxis/skills/agent-browser/SKILL.md"),
       "utf-8"
     );
     expect(content).toBe("v2");
@@ -630,21 +630,21 @@ describe("update command", () => {
   });
 
   it("silently removes manifest entry for upstream-removed file belonging to deselected skill", async () => {
-    const SKILL_FILE = ".agents/skills/agent-browser/SKILL.md";
+    const SKILL_FILE = "praxis/skills/agent-browser/SKILL.md";
     await writeTestFile(SKILL_FILE, "old");
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/conventions.md": { hash: hashContent("core") },
+        "praxis/conventions.md": { hash: hashContent("core") },
         [SKILL_FILE]: { hash: hashContent("old") },
       }),
       selectedComponents: { skills: [], reviewers: [] },
     });
-    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile("praxis/conventions.md", "core");
 
     // Upstream no longer has SKILL_FILE (it was removed from Praxis)
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/conventions.md", "core"]])
+      new Map([["praxis/conventions.md", "core"]])
     );
 
     await update();
@@ -659,20 +659,20 @@ describe("update command", () => {
   });
 
   it("silently removes manifest entry for upstream-removed file belonging to deselected reviewer", async () => {
-    const REVIEWER_FILE = ".agents/agents/reviewers/security.md";
+    const REVIEWER_FILE = "praxis/agents/reviewers/security.md";
     await writeTestFile(REVIEWER_FILE, "old");
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/conventions.md": { hash: hashContent("core") },
+        "praxis/conventions.md": { hash: hashContent("core") },
         [REVIEWER_FILE]: { hash: hashContent("old") },
       }),
       selectedComponents: { skills: [], reviewers: [] },
     });
-    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile("praxis/conventions.md", "core");
 
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/conventions.md", "core"]])
+      new Map([["praxis/conventions.md", "core"]])
     );
 
     await update();
@@ -684,20 +684,20 @@ describe("update command", () => {
   });
 
   it("prompts when upstream removes a file belonging to a selected component", async () => {
-    const SKILL_FILE = ".agents/skills/agent-browser/SKILL.md";
+    const SKILL_FILE = "praxis/skills/agent-browser/SKILL.md";
     await writeTestFile(SKILL_FILE, "old");
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/conventions.md": { hash: hashContent("core") },
+        "praxis/conventions.md": { hash: hashContent("core") },
         [SKILL_FILE]: { hash: hashContent("old") },
       }),
       selectedComponents: { skills: ["agent-browser"], reviewers: [] },
     });
-    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile("praxis/conventions.md", "core");
 
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/conventions.md", "core"]])
+      new Map([["praxis/conventions.md", "core"]])
     );
 
     p.confirm = vi.fn().mockResolvedValue(false); // user keeps the file
@@ -712,15 +712,15 @@ describe("update command", () => {
 
   it("does not nudge when there are no new unselected optional components", async () => {
     readManifest.mockResolvedValue({
-      ...makeManifest({ ".agents/conventions.md": { hash: hashContent("core") } }),
+      ...makeManifest({ "praxis/conventions.md": { hash: hashContent("core") } }),
       selectedComponents: { skills: ["agent-browser"], reviewers: [] },
     });
-    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile("praxis/conventions.md", "core");
 
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "core"],
-        [".agents/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
+        ["praxis/conventions.md", "core"],
+        ["praxis/skills/agent-browser/SKILL.md", '---\ndescription: "Browser"\n---'],
       ])
     );
 
@@ -740,15 +740,15 @@ describe("update command", () => {
       figma: { command: "npx", args: ["-y", "figma-new"], env: { KEY: "${K}" } },
     });
 
-    await writeTestFile(".agents/conventions.md", "core");
-    await writeTestFile(".agents/skills/figma-to-code/SKILL.md", "---\ndescription: Figma\n---");
-    await writeTestFile(".agents/skills/figma-to-code/mcp.json", oldMcp);
+    await writeTestFile("praxis/conventions.md", "core");
+    await writeTestFile("praxis/skills/figma-to-code/SKILL.md", "---\ndescription: Figma\n---");
+    await writeTestFile("praxis/skills/figma-to-code/mcp.json", oldMcp);
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/conventions.md": { hash: hashContent("core") },
-        ".agents/skills/figma-to-code/SKILL.md": { hash: hashContent("---\ndescription: Figma\n---") },
-        ".agents/skills/figma-to-code/mcp.json": { hash: hashContent(oldMcp) },
+        "praxis/conventions.md": { hash: hashContent("core") },
+        "praxis/skills/figma-to-code/SKILL.md": { hash: hashContent("---\ndescription: Figma\n---") },
+        "praxis/skills/figma-to-code/mcp.json": { hash: hashContent(oldMcp) },
       }),
       selectedComponents: { skills: ["figma-to-code"], reviewers: [] },
       enabledTools: ["cursor"],
@@ -756,9 +756,9 @@ describe("update command", () => {
 
     fetchTemplates.mockResolvedValue(
       new Map([
-        [".agents/conventions.md", "core"],
-        [".agents/skills/figma-to-code/SKILL.md", "---\ndescription: Figma\n---"],
-        [".agents/skills/figma-to-code/mcp.json", newMcp],
+        ["praxis/conventions.md", "core"],
+        ["praxis/skills/figma-to-code/SKILL.md", "---\ndescription: Figma\n---"],
+        ["praxis/skills/figma-to-code/mcp.json", newMcp],
       ])
     );
 
@@ -777,18 +777,18 @@ describe("update command", () => {
   });
 
   it("does not regenerate tool configs when no tools are enabled", async () => {
-    await writeTestFile(".agents/conventions.md", "core");
+    await writeTestFile("praxis/conventions.md", "core");
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/conventions.md": { hash: hashContent("old core") },
+        "praxis/conventions.md": { hash: hashContent("old core") },
       }),
       selectedComponents: { skills: [], reviewers: [] },
       enabledTools: [],
     });
 
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/conventions.md", "core"]])
+      new Map([["praxis/conventions.md", "core"]])
     );
 
     await update();
@@ -799,11 +799,11 @@ describe("update command", () => {
 
   it("warns but continues when regenerateToolConfigs throws", async () => {
     // File on disk matches old manifest hash (not locally modified)
-    await writeTestFile(".agents/conventions.md", "old core");
+    await writeTestFile("praxis/conventions.md", "old core");
 
     readManifest.mockResolvedValue({
       ...makeManifest({
-        ".agents/conventions.md": { hash: hashContent("old core") },
+        "praxis/conventions.md": { hash: hashContent("old core") },
       }),
       selectedComponents: { skills: [], reviewers: [] },
       enabledTools: ["cursor"],
@@ -811,7 +811,7 @@ describe("update command", () => {
 
     // Template has new content — triggers an update
     fetchTemplates.mockResolvedValue(
-      new Map([[".agents/conventions.md", "new core"]])
+      new Map([["praxis/conventions.md", "new core"]])
     );
 
     regenerateToolConfigs.mockRejectedValueOnce(new Error("disk full"));

@@ -66,7 +66,7 @@ After implementation and review are complete:
 
 ## Git conventions
 
-Follow the Git conventions in @.agents/conventions.md.
+Follow the Git conventions in @praxis/conventions.md.
 
 Commits should tell a story to reviewers (AI or human). It is fine to have multiple commits per step if they make logical sense — prefer meaningful, reviewable units over one giant commit.
 

@@ -1,4 +1,4 @@
-// Keep in sync with the core skills in .agents/skills/ in this repository.
+// Keep in sync with the core skills in praxis/skills/ in this repository.
 const CORE_SKILLS = new Set([
   "px-brainstorm",
   "px-plan",
@@ -11,13 +11,13 @@ const CORE_SKILLS = new Set([
  * Returns the optional component a file belongs to, or null for core files.
  *
  * Convention:
- *   .agents/skills/{name}/**  → optional skill "{name}" (if not in CORE_SKILLS)
- *   .agents/agents/reviewers/{name}.md → optional reviewer "{name}"
+ *   praxis/skills/{name}/**  → optional skill "{name}" (if not in CORE_SKILLS)
+ *   praxis/agents/reviewers/{name}.md → optional reviewer "{name}"
  *   everything else           → core (null)
  */
 export function getComponentForFile(relativePath) {
   const skillMatch = relativePath.match(
-    /^\.agents\/skills\/([^/]+)(\/|$)/
+    /^praxis\/skills\/([^/]+)(\/|$)/
   );
   if (skillMatch) {
     const name = skillMatch[1];
@@ -28,7 +28,7 @@ export function getComponentForFile(relativePath) {
   }
 
   const reviewerMatch = relativePath.match(
-    /^\.agents\/agents\/reviewers\/([^/]+)\.md$/
+    /^praxis\/agents\/reviewers\/([^/]+)\.md$/
   );
   if (reviewerMatch) {
     return { name: reviewerMatch[1], type: "reviewer" };
@@ -105,9 +105,9 @@ export function discoverOptionalComponents(templates) {
 export function getComponentDescription(templates, componentName, componentType) {
   let primaryPath;
   if (componentType === "reviewer") {
-    primaryPath = `.agents/agents/reviewers/${componentName}.md`;
+    primaryPath = `praxis/agents/reviewers/${componentName}.md`;
   } else {
-    primaryPath = `.agents/skills/${componentName}/SKILL.md`;
+    primaryPath = `praxis/skills/${componentName}/SKILL.md`;
   }
 
   const content = templates.get(primaryPath);

@@ -59,14 +59,14 @@ describe("status", () => {
     const content = "# Test file";
     const hash = hashContent(content);
 
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), content);
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), content);
 
     readManifest.mockResolvedValue({
       installedAt: "2025-01-01T00:00:00.000Z",
       updatedAt: "2025-01-01T00:00:00.000Z",
       files: {
-        ".agents/test.md": { hash },
+        "praxis/test.md": { hash },
       },
     });
 
@@ -78,14 +78,14 @@ describe("status", () => {
   });
 
   it("detects modified file", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/test.md"), "modified content");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/test.md"), "modified content");
 
     readManifest.mockResolvedValue({
       installedAt: "2025-01-01T00:00:00.000Z",
       updatedAt: "2025-01-01T00:00:00.000Z",
       files: {
-        ".agents/test.md": { hash: hashContent("original content") },
+        "praxis/test.md": { hash: hashContent("original content") },
       },
     });
 
@@ -104,7 +104,7 @@ describe("status", () => {
       installedAt: "2025-01-01T00:00:00.000Z",
       updatedAt: "2025-01-01T00:00:00.000Z",
       files: {
-        ".agents/gone.md": { hash: "abc123" },
+        "praxis/gone.md": { hash: "abc123" },
       },
     });
 
@@ -122,17 +122,17 @@ describe("status", () => {
     const goodContent = "good";
     const goodHash = hashContent(goodContent);
 
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/good.md"), goodContent);
-    await writeFile(join(tmpDir, ".agents/changed.md"), "new content");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/good.md"), goodContent);
+    await writeFile(join(tmpDir, "praxis/changed.md"), "new content");
 
     readManifest.mockResolvedValue({
       installedAt: "2025-01-01T00:00:00.000Z",
       updatedAt: "2025-01-01T00:00:00.000Z",
       files: {
-        ".agents/good.md": { hash: goodHash },
-        ".agents/changed.md": { hash: hashContent("old content") },
-        ".agents/missing.md": { hash: "deadbeef" },
+        "praxis/good.md": { hash: goodHash },
+        "praxis/changed.md": { hash: hashContent("old content") },
+        "praxis/missing.md": { hash: "deadbeef" },
       },
     });
 
@@ -150,8 +150,8 @@ describe("status", () => {
   });
 
   it("shows component count when selectedComponents is in manifest", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/conventions.md"), "core");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/conventions.md"), "core");
 
     readManifest.mockResolvedValue({
       installedAt: "2025-01-01T00:00:00.000Z",
@@ -161,7 +161,7 @@ describe("status", () => {
         reviewers: ["security"],
       },
       files: {
-        ".agents/conventions.md": { hash: hashContent("core") },
+        "praxis/conventions.md": { hash: hashContent("core") },
       },
     });
 
@@ -173,14 +173,14 @@ describe("status", () => {
   });
 
   it("does not show component count when selectedComponents is absent", async () => {
-    await mkdir(join(tmpDir, ".agents"), { recursive: true });
-    await writeFile(join(tmpDir, ".agents/conventions.md"), "core");
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/conventions.md"), "core");
 
     readManifest.mockResolvedValue({
       installedAt: "2025-01-01T00:00:00.000Z",
       updatedAt: "2025-01-01T00:00:00.000Z",
       files: {
-        ".agents/conventions.md": { hash: hashContent("core") },
+        "praxis/conventions.md": { hash: hashContent("core") },
       },
     });
 
