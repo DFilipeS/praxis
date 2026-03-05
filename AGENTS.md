@@ -57,7 +57,7 @@ Status transitions are owned by specific skills:
 ### Adding a new skill
 1. Create `praxis/skills/skill-name/SKILL.md` with frontmatter (`name`, `description`)
 2. If it produces files, add a `reference/template.md` for progressive disclosure
-3. Reference `@praxis/conventions.md` for shared conventions
+3. Reference `@../../conventions.md` for shared conventions (relative from `skills/<name>/SKILL.md`)
 4. Update the README with the new skill
 
 ### Adding a new sub-agent
@@ -82,4 +82,4 @@ Edit the relevant `reference/template.md`. Changes affect all future documents c
 - **Don't put non-agent files in `praxis/agents/`** — some tools load every file in that directory as an agent definition.
 - **The reviewer output format is centralized** in `praxis/reviewer-output-format.md`. If you change it, all reviewers pick up the change. Test with at least one reviewer after modifying.
 - **Tags are append-only in practice.** Skills add new tags but never remove or rename existing ones. If you need to clean up tags, do it manually in `.ai-workflow/tags` and update any documents that use the old tags.
-- **The `@` mention syntax** (e.g., `@praxis/conventions.md`) triggers automatic context loading. Plain file paths without `@` are just text — the agent would have to manually read them.
+- **The `@` mention syntax** (e.g., `@../../conventions.md`) triggers automatic context loading. Use paths relative to the skill file's location since skills are installed into tool-specific directories, not `praxis/`. Plain file paths without `@` are just text — the agent would have to manually read them.
