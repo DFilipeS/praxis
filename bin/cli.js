@@ -56,9 +56,10 @@ tool
   .command("add")
   .description("Enable tool adapter(s) and generate their config files")
   .argument("[names...]", "tool names (e.g., claude-code cursor)")
-  .action(async (names) => {
+  .option("--ref <ref>", "Git ref (branch/tag/sha) to fetch templates from", "main")
+  .action(async (names, opts) => {
     const { toolAdd } = await import("../src/commands/tool.js");
-    await toolAdd(names);
+    await toolAdd(names, { ref: opts.ref });
   });
 
 tool

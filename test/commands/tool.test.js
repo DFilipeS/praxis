@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 vi.mock("@clack/prompts");
+vi.mock("../../src/templates.js");
 vi.mock("../../src/manifest.js", async (importOriginal) => {
   const actual = await importOriginal();
   return {
@@ -15,6 +16,7 @@ vi.mock("../../src/manifest.js", async (importOriginal) => {
 });
 
 import * as p from "@clack/prompts";
+import { fetchTemplates } from "../../src/templates.js";
 import { readManifest, writeManifest, hashContent } from "../../src/manifest.js";
 import { toolAdd, toolRemove, toolList } from "../../src/commands/tool.js";
 
@@ -53,6 +55,8 @@ beforeEach(async () => {
   p.isCancel = vi.fn().mockReturnValue(false);
   p.multiselect = vi.fn().mockResolvedValue([]);
   p.confirm = vi.fn().mockResolvedValue(true);
+
+  fetchTemplates.mockResolvedValue(new Map());
 });
 
 afterEach(async () => {

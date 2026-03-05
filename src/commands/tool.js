@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { lstat, readFile, rm, rmdir, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, rm, rmdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
@@ -10,7 +10,8 @@ import {
   listAdapters,
   writeMcpConfigFile,
 } from "../adapters.js";
-import { isSafePath } from "../files.js";
+import { installToDestinations, isSafePath } from "../files.js";
+import { fetchTemplates } from "../templates.js";
 
 /**
  * Writes MCP config for a single tool adapter.
@@ -81,7 +82,7 @@ async function removeToolMcpConfig(projectRoot, resolvedRoot, adapter, mcpConfig
   return 1;
 }
 
-export async function toolAdd(names) {
+export async function toolAdd(names, { ref = "main" } = {}) {
   const projectRoot = process.cwd();
   const resolvedRoot = resolve(projectRoot);
 
@@ -137,27 +138,81 @@ export async function toolAdd(names) {
     return;
   }
 
-  // Update manifest first so a subsequent run can reconcile if file writes fail
+  // Fetch templates to get file contents for installation
+  const s = p.spinner();
+  s.start("Fetching templates from GitHub");
+
+  let templates;
+  try {
+    templates = await fetchTemplates({ ref });
+  } catch (err) {
+    s.stop("Failed to fetch templates");
+    p.log.error(err.message);
+    process.exit(1);
+  }
+
+  s.stop(`Fetched ${templates.size} template files`);
+
+  // Install files to the new tool destinations
+  const updatedManifestFiles = { ...manifest.files };
+  let filesInstalled = 0;
+
+  // Only install to the newly added tools, not all enabled tools
+  const newTools = selectedNames.filter((n) => !manifest.enabledTools?.includes(n));
+
+  for (const [sourcePath, entry] of Object.entries(manifest.files)) {
+    const content = templates.get(sourcePath);
+    if (!content) continue;
+
+    const toolsToInstall = newTools.length > 0 ? newTools : selectedNames;
+    const existingDestinations = entry.destinations || {};
+    const newDestinations = { ...existingDestinations };
+
+    for (const toolName of toolsToInstall) {
+      const adapter = getAdapter(toolName);
+      if (!adapter) continue;
+
+      const destPath = adapter.getDestinationPath(sourcePath);
+      if (!destPath) continue;
+
+      const fullPath = resolve(projectRoot, destPath);
+      if (!isSafePath(resolvedRoot, fullPath)) continue;
+
+      await mkdir(dirname(fullPath), { recursive: true });
+      await writeFile(fullPath, content);
+      newDestinations[toolName] = destPath;
+      filesInstalled++;
+    }
+
+    updatedManifestFiles[sourcePath] = { ...entry, destinations: newDestinations };
+  }
+
+  // Update manifest with new enabled tools and updated destinations
   for (const name of selectedNames) {
     enabledTools.add(name);
   }
-  await writeManifest(projectRoot, {
+
+  const updatedManifest = {
     ...manifest,
     updatedAt: new Date().toISOString(),
     enabledTools: [...enabledTools],
-  });
+    files: updatedManifestFiles,
+  };
+  await writeManifest(projectRoot, updatedManifest);
 
-  const mcpConfig = await collectMcpConfig(projectRoot, manifest);
-  let totalWritten = 0;
+  // Write MCP configs
+  const mcpConfig = await collectMcpConfig(projectRoot, updatedManifest);
+  let mcpWritten = 0;
 
   for (const name of selectedNames) {
     const adapter = getAdapter(name);
     /* v8 ignore next */
     if (!adapter) continue;
     const written = await writeToolMcpConfig(projectRoot, resolvedRoot, adapter, mcpConfig);
-    totalWritten += written;
+    mcpWritten += written;
   }
 
+  const totalWritten = filesInstalled + mcpWritten;
   p.outro(
     `Done! ${pc.green(totalWritten)} file(s) written for ${selectedNames.join(", ")}.`
   );
