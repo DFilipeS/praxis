@@ -21,7 +21,7 @@ If no arguments, ask the user what to review.
 
 ### 2. Discover reviewers
 
-Scan `praxis/agents/reviewers/` for all reviewer agent definitions. Each `.md` file in that directory is a reviewer to run.
+Scan `agents/reviewers/` for all reviewer agent definitions. Each `.md` file in that directory is a reviewer to run.
 
 If the directory is empty or doesn't exist, inform the user and stop.
 
@@ -53,7 +53,7 @@ After presenting findings, ask the user which (if any) they want to fix. Only ma
 
 ## Reviewer agent conventions
 
-Each reviewer in `praxis/agents/reviewers/` must follow the output format defined in `praxis/reviewer-output-format.md`.
+Each reviewer in `agents/reviewers/` must follow the output format defined in `reviewer-output-format.md`.
 
 ## Behavioral rules
 
