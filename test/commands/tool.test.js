@@ -352,6 +352,35 @@ describe("toolAdd", () => {
     );
   });
 
+  it("re-installs files when re-adding an already enabled tool", async () => {
+    const fileContent = "# Re-install";
+    const fileHash = hashContent(fileContent);
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["cursor"],
+        files: {
+          "praxis/skills/my-skill/SKILL.md": {
+            hash: fileHash,
+            destinations: { cursor: ".cursor/skills/my-skill/SKILL.md" },
+          },
+        },
+      })
+    );
+
+    fetchTemplates.mockResolvedValue(
+      new Map([["praxis/skills/my-skill/SKILL.md", fileContent]])
+    );
+
+    await toolAdd(["cursor"]);
+
+    const installed = await readFile(
+      join(tmpDir, ".cursor/skills/my-skill/SKILL.md"),
+      "utf-8"
+    );
+    expect(installed).toBe(fileContent);
+  });
+
   it("skips manifest files not found in templates", async () => {
     readManifest.mockResolvedValue(
       makeManifest({
