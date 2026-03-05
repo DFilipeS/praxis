@@ -16,7 +16,7 @@ import {
 import { installFile, installToDestinations, isSafePath } from "../files.js";
 import { regenerateToolConfigs } from "../adapters.js";
 
-export async function components() {
+export async function components({ ref = "main" } = {}) {
   const projectRoot = process.cwd();
   const resolvedRoot = resolve(projectRoot);
 
@@ -35,7 +35,7 @@ export async function components() {
 
   let templates;
   try {
-    templates = await fetchTemplates();
+    templates = await fetchTemplates({ ref });
   } catch (err) {
     s.stop("Failed to fetch templates");
     p.log.error(err.message);
