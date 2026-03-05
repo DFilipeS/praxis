@@ -4,13 +4,14 @@ import { tmpdir } from "node:os";
 import { Readable } from "node:stream";
 import { extract } from "tar";
 
-const TARBALL_URL =
-  "https://api.github.com/repos/DFilipeS/praxis/tarball/main";
+const TARBALL_BASE_URL =
+  "https://api.github.com/repos/DFilipeS/praxis/tarball";
 
 const MAX_DOWNLOAD_SIZE = 10 * 1024 * 1024; // 10 MB
 
-export async function fetchTemplates() {
-  const res = await fetch(TARBALL_URL, {
+export async function fetchTemplates({ ref = "main" } = {}) {
+  const url = `${TARBALL_BASE_URL}/${encodeURIComponent(ref)}`;
+  const res = await fetch(url, {
     headers: { "User-Agent": "praxis-cli" },
     redirect: "follow",
   });
