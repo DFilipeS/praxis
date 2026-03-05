@@ -16,17 +16,19 @@ program
 program
   .command("init")
   .description("Initialize Praxis in the current project")
-  .action(async () => {
+  .option("--ref <ref>", "Git ref (branch/tag/sha) to fetch templates from", "main")
+  .action(async (opts) => {
     const { init } = await import("../src/commands/init.js");
-    await init();
+    await init({ ref: opts.ref });
   });
 
 program
   .command("update")
   .description("Update Praxis files to the latest version")
-  .action(async () => {
+  .option("--ref <ref>", "Git ref (branch/tag/sha) to fetch templates from", "main")
+  .action(async (opts) => {
     const { update } = await import("../src/commands/update.js");
-    await update();
+    await update({ ref: opts.ref });
   });
 
 program

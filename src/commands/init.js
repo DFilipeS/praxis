@@ -15,7 +15,7 @@ import {
 import { installFile, installToDestinations, isSafePath } from "../files.js";
 import { listAdapters, regenerateToolConfigs } from "../adapters.js";
 
-export async function init() {
+export async function init({ ref = "main" } = {}) {
   const projectRoot = process.cwd();
   const resolvedRoot = resolve(projectRoot);
 
@@ -27,7 +27,7 @@ export async function init() {
       "Praxis is already initialized in this project. Running update instead."
     );
     const { update } = await import("./update.js");
-    return update();
+    return update({ ref });
   }
 
   const s = p.spinner();
@@ -35,7 +35,7 @@ export async function init() {
 
   let templates;
   try {
-    templates = await fetchTemplates();
+    templates = await fetchTemplates({ ref });
   } catch (err) {
     s.stop("Failed to fetch templates");
     p.log.error(err.message);
