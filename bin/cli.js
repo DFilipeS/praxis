@@ -34,9 +34,10 @@ program
 program
   .command("components")
   .description("Change which optional components are installed")
-  .action(async () => {
+  .option("--ref <ref>", "Git ref (branch/tag/sha) to fetch templates from", "main")
+  .action(async (opts) => {
     const { components } = await import("../src/commands/components.js");
-    await components();
+    await components({ ref: opts.ref });
   });
 
 program
