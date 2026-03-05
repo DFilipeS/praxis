@@ -51,8 +51,8 @@ export async function collectMcpConfig(projectRoot, manifest) {
     const adapter = adapters[toolName];
     if (!adapter) continue;
     const testPath = adapter.getDestinationPath("praxis/skills/test/mcp.json");
+    /* v8 ignore next 5 -- all registered adapters return a valid skills path */
     if (testPath) {
-      // Extract the prefix before "skills/"
       const idx = testPath.indexOf("skills/");
       if (idx >= 0) {
         searchPrefixes.push(testPath.slice(0, idx + "skills/".length));
@@ -71,6 +71,7 @@ export async function collectMcpConfig(projectRoot, manifest) {
     for (const prefix of searchPrefixes) {
       const mcpPath = resolve(projectRoot, prefix, skillName, "mcp.json");
       const expectedPrefix = resolve(projectRoot, prefix) + sep;
+      /* v8 ignore next -- skillName is pre-filtered for ".." and "/" on line 68 */
       if (!mcpPath.startsWith(expectedPrefix)) continue;
 
       try {

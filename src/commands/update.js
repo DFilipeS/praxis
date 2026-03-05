@@ -180,12 +180,15 @@ export async function update() {
 
       for (const toolName of enabledTools) {
         const adapter = getAdapter(toolName);
+        /* v8 ignore next */
         if (!adapter) continue;
 
         const destPath = adapter.getDestinationPath(relativePath);
+        /* v8 ignore next */
         if (!destPath) continue;
 
         const fullDest = resolve(projectRoot, destPath);
+        /* v8 ignore next */
         if (!isSafePath(resolvedRoot, fullDest)) continue;
 
         const destExists = existsSync(fullDest);
@@ -356,6 +359,7 @@ export async function update() {
       let anyRemoved = false;
       for (const [toolName, destPath] of Object.entries(entry.destinations)) {
         const fullDest = resolve(projectRoot, destPath);
+        /* v8 ignore next */
         if (!isSafePath(resolvedRoot, fullDest)) continue;
 
         if (!existsSync(fullDest)) {

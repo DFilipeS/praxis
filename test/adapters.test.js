@@ -126,6 +126,41 @@ describe("collectMcpConfig", () => {
     const result = await collectMcpConfig(tmpDir, manifest);
     expect(result).toEqual({});
   });
+
+  it("skips unknown adapters in enabledTools search prefix loop", async () => {
+    await mkdir(join(tmpDir, "praxis/skills/figma-to-code"), { recursive: true });
+    await writeFile(
+      join(tmpDir, "praxis/skills/figma-to-code/mcp.json"),
+      JSON.stringify({ figma: { command: "npx", args: [], env: {} } })
+    );
+
+    const manifest = {
+      selectedComponents: { skills: ["figma-to-code"], reviewers: [] },
+      enabledTools: ["unknown-tool", "amp-code"],
+    };
+
+    const result = await collectMcpConfig(tmpDir, manifest);
+    expect(result.figma).toBeTruthy();
+  });
+
+  it("reads mcp.json from tool destination path when tools are enabled", async () => {
+    await mkdir(join(tmpDir, ".agents/skills/figma-to-code"), { recursive: true });
+    await writeFile(
+      join(tmpDir, ".agents/skills/figma-to-code/mcp.json"),
+      JSON.stringify({
+        figma: { command: "npx", args: ["-y", "figma-mcp"], env: {} },
+      })
+    );
+
+    const manifest = {
+      selectedComponents: { skills: ["figma-to-code"], reviewers: [] },
+      enabledTools: ["amp-code"],
+    };
+
+    const result = await collectMcpConfig(tmpDir, manifest);
+    expect(result.figma).toBeTruthy();
+    expect(result.figma.command).toBe("npx");
+  });
 });
 
 describe("getAdapter", () => {
@@ -188,12 +223,17 @@ describe("amp-code adapter", () => {
   it("returns managed files from source files", () => {
     const managed = adapter.getManagedFiles([
       "praxis/conventions.md",
+      "README.md",
       "praxis/skills/px-brainstorm/SKILL.md",
     ]);
     expect(managed).toEqual([
       ".agents/conventions.md",
       ".agents/skills/px-brainstorm/SKILL.md",
     ]);
+  });
+
+  it("returns tool name", () => {
+    expect(adapter.getToolName()).toBe("amp-code");
   });
 });
 
@@ -236,6 +276,30 @@ describe("claude-code adapter", () => {
     const parsed = JSON.parse(result.content);
     expect(parsed.mcpServers.test.env.KEY).toBe("${MY_VAR}");
   });
+
+  it("returns tool name", () => {
+    expect(adapter.getToolName()).toBe("claude-code");
+  });
+
+  it("returns null for non-praxis files", () => {
+    expect(adapter.getDestinationPath("README.md")).toBeNull();
+  });
+
+  it("returns MCP config path", () => {
+    expect(adapter.getMcpConfigPath()).toBe(".mcp.json");
+  });
+
+  it("returns managed files from source files", () => {
+    const managed = adapter.getManagedFiles([
+      "praxis/conventions.md",
+      "praxis/skills/figma-to-code/SKILL.md",
+      "README.md",
+    ]);
+    expect(managed).toEqual([
+      ".claude/conventions.md",
+      ".claude/skills/figma-to-code/SKILL.md",
+    ]);
+  });
 });
 
 describe("cursor adapter", () => {
@@ -274,6 +338,30 @@ describe("cursor adapter", () => {
     const parsed = JSON.parse(result.content);
     expect(parsed.mcpServers.test.env.KEY).toBe("${env:MY_VAR}");
     expect(parsed.mcpServers.test.env.OTHER).toBe("${env:ANOTHER}");
+  });
+
+  it("returns tool name", () => {
+    expect(adapter.getToolName()).toBe("cursor");
+  });
+
+  it("returns null for non-praxis files", () => {
+    expect(adapter.getDestinationPath("README.md")).toBeNull();
+  });
+
+  it("returns MCP config path", () => {
+    expect(adapter.getMcpConfigPath()).toBe(".cursor/mcp.json");
+  });
+
+  it("returns managed files from source files", () => {
+    const managed = adapter.getManagedFiles([
+      "praxis/conventions.md",
+      "praxis/agents/reviewers/security.md",
+      "README.md",
+    ]);
+    expect(managed).toEqual([
+      ".cursor/conventions.md",
+      ".cursor/agents/reviewers/security.md",
+    ]);
   });
 });
 
@@ -368,6 +456,30 @@ describe("opencode adapter", () => {
     const parsed = JSON.parse(result.content);
     expect(parsed.mcp.test.environment).toEqual({});
     expect(parsed.mcp.test.command).toEqual(["cmd", "-y"]);
+  });
+
+  it("returns tool name", () => {
+    expect(adapter.getToolName()).toBe("opencode");
+  });
+
+  it("returns null for non-praxis files", () => {
+    expect(adapter.getDestinationPath("README.md")).toBeNull();
+  });
+
+  it("returns MCP config path", () => {
+    expect(adapter.getMcpConfigPath()).toBe("opencode.json");
+  });
+
+  it("returns managed files from source files", () => {
+    const managed = adapter.getManagedFiles([
+      "praxis/conventions.md",
+      "praxis/agents/reviewers/security.md",
+      "README.md",
+    ]);
+    expect(managed).toEqual([
+      ".opencode/conventions.md",
+      ".opencode/agents/reviewers/security.md",
+    ]);
   });
 });
 

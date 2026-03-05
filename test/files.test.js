@@ -8,7 +8,7 @@ vi.mock("@clack/prompts");
 
 import * as p from "@clack/prompts";
 import { hashContent } from "../src/manifest.js";
-import { installFile } from "../src/files.js";
+import { installFile, installToDestinations } from "../src/files.js";
 
 let tmpDir;
 
@@ -137,5 +137,65 @@ describe("installFile", () => {
     const result = await installFile(fullPath, "conflict.md", "new content");
     expect(result.status).toBe("cancelled");
     expect(p.cancel).not.toHaveBeenCalled();
+  });
+});
+
+describe("installToDestinations", () => {
+  it("skips unknown tool names", async () => {
+    const result = await installToDestinations(
+      tmpDir,
+      tmpDir,
+      "praxis/test.md",
+      "content",
+      ["unknown-tool"]
+    );
+
+    expect(result.hash).toBe(hashContent("content"));
+    expect(result.destinations).toEqual({});
+  });
+
+  it("skips files that do not map to a destination", async () => {
+    const result = await installToDestinations(
+      tmpDir,
+      tmpDir,
+      "not-praxis/test.md",
+      "content",
+      ["amp-code"]
+    );
+
+    expect(result.destinations).toEqual({});
+  });
+
+  it("skips destinations that resolve outside the project root", async () => {
+    const { resolve } = await import("node:path");
+    // Use a subdirectory as the "resolved root" so .agents/ resolves above it
+    const subDir = join(tmpDir, "subdir");
+    await mkdir(subDir, { recursive: true });
+
+    const result = await installToDestinations(
+      tmpDir,
+      resolve(subDir),
+      "praxis/conventions.md",
+      "# Core",
+      ["amp-code"]
+    );
+
+    // Destination .agents/conventions.md resolves relative to tmpDir which is outside subDir
+    expect(result.destinations).toEqual({});
+  });
+
+  it("installs to valid tool destinations", async () => {
+    const { resolve } = await import("node:path");
+    const result = await installToDestinations(
+      tmpDir,
+      resolve(tmpDir),
+      "praxis/conventions.md",
+      "# Core",
+      ["amp-code"]
+    );
+
+    expect(result.destinations["amp-code"]).toBe(".agents/conventions.md");
+    const content = await readFile(join(tmpDir, ".agents/conventions.md"), "utf-8");
+    expect(content).toBe("# Core");
   });
 });

@@ -267,6 +267,19 @@ describe("toolAdd", () => {
     expect(content.mcp).toBeTruthy();
   });
 
+  it("shows multi-select with already enabled tools as initial values", async () => {
+    readManifest.mockResolvedValue(makeManifest({ enabledTools: ["cursor"] }));
+    p.multiselect = vi.fn().mockResolvedValue(["cursor"]);
+
+    await toolAdd([]);
+
+    expect(p.multiselect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        initialValues: ["cursor"],
+      })
+    );
+  });
+
   it("merges mcp into existing opencode.json via writeMcpConfigFile", async () => {
     await writeFile(
       join(tmpDir, "opencode.json"),
@@ -535,6 +548,137 @@ describe("toolRemove", () => {
     );
     expect(manifest.enabledTools).not.toContain("amp-code");
     expect(manifest.files["praxis/conventions.md"].destinations["amp-code"]).toBeUndefined();
+  });
+
+  it("blocks path traversal for tool destination paths", async () => {
+    // Create a file outside the project that should NOT be touched
+    const evilContent = "should not be deleted";
+    await mkdir(join(tmpDir, "outside"), { recursive: true });
+    await writeFile(join(tmpDir, "outside/evil.md"), evilContent);
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code"],
+        files: {
+          "praxis/conventions.md": {
+            hash: hashContent(evilContent),
+            destinations: { "amp-code": "../outside/evil.md" },
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    // File outside project root must not be deleted
+    expect(existsSync(join(tmpDir, "outside/evil.md"))).toBe(true);
+  });
+
+  it("cleans up multiple empty directories after removing tool destinations", async () => {
+    await mkdir(join(tmpDir, ".agents/skills/agent-browser"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"), "browser");
+    await mkdir(join(tmpDir, ".agents/agents/reviewers"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/agents/reviewers/security.md"), "security");
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code"],
+        files: {
+          "praxis/skills/agent-browser/SKILL.md": {
+            hash: hashContent("browser"),
+            destinations: { "amp-code": ".agents/skills/agent-browser/SKILL.md" },
+          },
+          "praxis/agents/reviewers/security.md": {
+            hash: hashContent("security"),
+            destinations: { "amp-code": ".agents/agents/reviewers/security.md" },
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser/SKILL.md"))).toBe(false);
+    expect(existsSync(join(tmpDir, ".agents/agents/reviewers/security.md"))).toBe(false);
+    // Empty directories should be cleaned up
+    expect(existsSync(join(tmpDir, ".agents/skills/agent-browser"))).toBe(false);
+    expect(existsSync(join(tmpDir, ".agents/agents/reviewers"))).toBe(false);
+  });
+
+  it("skips manifest entries without destinations during tool remove", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code"],
+        files: {
+          "praxis/conventions.md": {
+            hash: hashContent("core"),
+            // No destinations property — legacy entry
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.enabledTools).not.toContain("amp-code");
+  });
+
+  it("skips manifest entries where the tool has no destination", async () => {
+    await mkdir(join(tmpDir, ".cursor"), { recursive: true });
+    await writeFile(join(tmpDir, ".cursor/conventions.md"), "core");
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code", "cursor"],
+        files: {
+          "praxis/conventions.md": {
+            hash: hashContent("core"),
+            destinations: { cursor: ".cursor/conventions.md" },
+            // No amp-code destination
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    // cursor destination should be untouched
+    expect(existsSync(join(tmpDir, ".cursor/conventions.md"))).toBe(true);
+  });
+
+  it("shows summary with both removed and skipped counts", async () => {
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/clean.md"), "original");
+    await writeFile(join(tmpDir, ".agents/modified.md"), "locally changed");
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        enabledTools: ["amp-code"],
+        files: {
+          "praxis/clean.md": {
+            hash: hashContent("original"),
+            destinations: { "amp-code": ".agents/clean.md" },
+          },
+          "praxis/modified.md": {
+            hash: hashContent("original content"),
+            destinations: { "amp-code": ".agents/modified.md" },
+          },
+        },
+      })
+    );
+
+    await toolRemove(["amp-code"]);
+
+    // clean.md removed, modified.md skipped
+    expect(existsSync(join(tmpDir, ".agents/clean.md"))).toBe(false);
+    expect(existsSync(join(tmpDir, ".agents/modified.md"))).toBe(true);
+
+    const outroCall = p.outro.mock.calls[0][0];
+    expect(outroCall).toContain("removed");
+    expect(outroCall).toContain("skipped");
   });
 });
 
