@@ -46,13 +46,13 @@ As the conversation progresses, help ideas converge:
 
 When the user signals they're ready (or you sense convergence), produce an **idea summary** and save it to `.ai-workflow/ideas/`. Use a filename with the current date prefix followed by a slugified title (e.g., `.ai-workflow/ideas/20260222-offline-first-sync.md`).
 
-Follow the tag and naming conventions in @praxis/conventions.md.
+Follow the tag and naming conventions in @../../conventions.md.
 
 Use the file template in `reference/template.md`.
 
 ### 5. Offer to commit
 
-After saving the idea file (and any related files like `.ai-workflow/tags`), ask the user if they'd like to commit the changes. If they agree, stage only the relevant files and commit following the Git conventions in @praxis/conventions.md. Always let the user review before committing.
+After saving the idea file (and any related files like `.ai-workflow/tags`), ask the user if they'd like to commit the changes. If they agree, stage only the relevant files and commit following the Git conventions in @../../conventions.md. Always let the user review before committing.
 
 ## Behavioral rules
 

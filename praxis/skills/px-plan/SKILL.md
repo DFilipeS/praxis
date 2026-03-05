@@ -70,11 +70,11 @@ After the user approves the plan:
 
 ### 7. Offer to commit
 
-After saving the plan and updating related documents, ask the user if they'd like to commit the changes. If they agree, stage only the relevant files and commit following the Git conventions in @praxis/conventions.md. Always let the user review before committing.
+After saving the plan and updating related documents, ask the user if they'd like to commit the changes. If they agree, stage only the relevant files and commit following the Git conventions in @../../conventions.md. Always let the user review before committing.
 
 ## File conventions
 
-Follow the tag, naming, and status conventions in @praxis/conventions.md.
+Follow the tag, naming, and status conventions in @../../conventions.md.
 
 Use the file template in `reference/template.md`.
 

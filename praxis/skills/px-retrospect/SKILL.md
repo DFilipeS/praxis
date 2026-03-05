@@ -38,7 +38,7 @@ The user may add context you don't have visibility into (e.g., external factors,
 
 Distill the conversation into one or more learning files and save to `.ai-workflow/learnings/`. Each file should focus on a single, specific insight — not a broad summary of the retrospective.
 
-Follow the tag and naming conventions in @praxis/conventions.md.
+Follow the tag and naming conventions in @../../conventions.md.
 
 **Good learning**: "Phoenix LiveView form validation must use `phx-debounce` to avoid excessive server round-trips on every keystroke."
 
