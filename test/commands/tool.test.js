@@ -310,6 +310,65 @@ describe("toolAdd", () => {
     expect(content.provider).toEqual({ default: "anthropic" });
     expect(content.mcp.figma).toBeTruthy();
   });
+
+  it("throws when fetchTemplates fails", async () => {
+    readManifest.mockResolvedValue(makeManifest());
+    fetchTemplates.mockRejectedValue(new Error("network error"));
+
+    await expect(toolAdd(["cursor"])).rejects.toThrow("process.exit(1)");
+    expect(p.log.error).toHaveBeenCalledWith("network error");
+  });
+
+  it("installs manifest files to new tool destinations", async () => {
+    const fileContent = "# Skill File";
+    const fileHash = hashContent(fileContent);
+
+    readManifest.mockResolvedValue(
+      makeManifest({
+        files: {
+          "praxis/skills/my-skill/SKILL.md": { hash: fileHash },
+        },
+      })
+    );
+
+    fetchTemplates.mockResolvedValue(
+      new Map([["praxis/skills/my-skill/SKILL.md", fileContent]])
+    );
+
+    await toolAdd(["claude-code"]);
+
+    const installed = await readFile(
+      join(tmpDir, ".claude/skills/my-skill/SKILL.md"),
+      "utf-8"
+    );
+    expect(installed).toBe(fileContent);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    const entry = manifest.files["praxis/skills/my-skill/SKILL.md"];
+    expect(entry.destinations["claude-code"]).toBe(
+      ".claude/skills/my-skill/SKILL.md"
+    );
+  });
+
+  it("skips manifest files not found in templates", async () => {
+    readManifest.mockResolvedValue(
+      makeManifest({
+        files: {
+          "praxis/skills/gone/SKILL.md": { hash: "abc" },
+        },
+      })
+    );
+
+    fetchTemplates.mockResolvedValue(new Map());
+
+    await toolAdd(["cursor"]);
+
+    expect(
+      existsSync(join(tmpDir, ".cursor/skills/gone/SKILL.md"))
+    ).toBe(false);
+  });
 });
 
 describe("toolRemove", () => {
