@@ -56,7 +56,7 @@ Optional skills are project-specific. Select them during `praxis init` or change
 
 ### Reviewers
 
-All reviewers are optional. They run in parallel during the px-review skill. Add project-specific ones or remove built-in ones by editing `praxis/agents/reviewers/`.
+All reviewers are optional. They run in parallel during the px-review skill. Add project-specific ones or remove built-in ones by editing the `agents/reviewers/` directory inside your tool's config folder (e.g., `.agents/agents/reviewers/` for Amp Code, `.claude/agents/reviewers/` for Claude Code).
 
 | Reviewer              | Description                                                                     |
 | --------------------- | ------------------------------------------------------------------------------- |
@@ -125,13 +125,13 @@ npx github:DFilipeS/praxis update --ref v2.0.0
 
 #### Manual installation
 
-If you don't use Node.js, copy the `praxis/` directory into your project:
+If you don't use Node.js, copy the contents of the `praxis/` directory from this repo into your tool's config directory (e.g., `.agents/` for Amp Code, `.claude/` for Claude Code, `.cursor/` for Cursor):
 
 ```bash
-cp -r path/to/praxis/praxis your-project/praxis
+cp -r path/to/praxis/praxis/* your-project/.agents/
 ```
 
-Note that manual copies won't receive automatic updates.
+Note that manual copies won't receive automatic updates or multi-tool support.
 
 ### Usage
 
@@ -200,9 +200,9 @@ praxis/
 
 ### Adding project-specific reviewers
 
-Drop a `.md` file into `praxis/agents/reviewers/`. The px-review skill discovers and runs all reviewers in that directory automatically. Follow the output format in `praxis/reviewer-output-format.md`.
+Drop a `.md` file into the `agents/reviewers/` directory inside your tool's config folder (e.g., `.agents/agents/reviewers/` for Amp Code). The px-review skill discovers and runs all reviewers in that directory automatically. Follow the output format in `reviewer-output-format.md`.
 
-Example: create `praxis/agents/reviewers/elixir-conventions.md` for Elixir-specific checks.
+Example: create `agents/reviewers/elixir-conventions.md` for Elixir-specific checks.
 
 ### Removing default reviewers
 
