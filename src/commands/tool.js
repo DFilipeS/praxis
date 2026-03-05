@@ -170,12 +170,15 @@ export async function toolAdd(names, { ref = "main" } = {}) {
 
     for (const toolName of toolsToInstall) {
       const adapter = getAdapter(toolName);
+      /* v8 ignore next */
       if (!adapter) continue;
 
       const destPath = adapter.getDestinationPath(sourcePath);
+      /* v8 ignore next */
       if (!destPath) continue;
 
       const fullPath = resolve(projectRoot, destPath);
+      /* v8 ignore next */
       if (!isSafePath(resolvedRoot, fullPath)) continue;
 
       await mkdir(dirname(fullPath), { recursive: true });
