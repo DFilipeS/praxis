@@ -16,7 +16,7 @@ Inspired by [Every's Compound Engineering guide](https://every.to/guides/compoun
 
 **Context window efficient.** Every design decision respects the limited context window of AI agents. Templates are loaded on demand through progressive disclosure, not upfront. Research runs in parallel sub-agents that return summaries instead of polluting the main thread. Shared conventions live in one file, referenced by many. The goal: spend tokens on the real work, not on infrastructure.
 
-**Tool agnostic.** No dependency on a specific AI coding tool. Skills and agents use standard markdown with YAML frontmatter, compatible with [Amp](https://ampcode.com), [Claude Code](https://code.claude.com), and similar tools.
+**Tool agnostic.** No dependency on a specific AI coding tool. Skills and agents use standard markdown with YAML frontmatter, compatible with [Amp](https://ampcode.com), [Claude Code](https://code.claude.com), [Cursor](https://cursor.com), [OpenCode](https://opencode.ai), and similar tools.
 
 ## The Cycle
 
@@ -73,7 +73,7 @@ All reviewers are optional. They run in parallel during the px-review skill. Add
 
 ### Prerequisites
 
-- An AI coding agent that supports skills/agents (e.g., [Amp](https://ampcode.com), [Claude Code](https://code.claude.com))
+- An AI coding agent that supports skills/agents (e.g., [Amp](https://ampcode.com), [Claude Code](https://code.claude.com), [Cursor](https://cursor.com), [OpenCode](https://opencode.ai))
 - [Git](https://git-scm.com/)
 - [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`) — fast text search
 - [ast-grep](https://github.com/ast-grep/ast-grep) (`sg`) — structural/AST-aware code search (optional, recommended)
@@ -88,7 +88,11 @@ The recommended way to install Praxis is via the CLI (requires Node.js 18+):
 npx github:DFilipeS/praxis init
 ```
 
-This creates the Praxis directory with all skills and agents, sets up `.ai-workflow/` directories, and writes a `.praxis-manifest.json` file to track installed files. Commit `.praxis-manifest.json` to version control so the CLI can detect changes on future updates.
+The `init` command walks you through an interactive setup:
+1. **Tool selection** — choose which AI coding tools you use (Amp Code, Claude Code, Cursor, OpenCode). Praxis installs files directly into each tool's expected directory (`.agents/`, `.claude/`, `.cursor/`, `.opencode/`).
+2. **Component selection** — choose which optional skills and reviewers to install.
+
+It then copies all files, sets up `.ai-workflow/` directories, generates MCP configs for selected tools, and writes a `.praxis-manifest.json` file to track installed files. Commit `.praxis-manifest.json` to version control so the CLI can detect changes on future updates.
 
 To update to the latest version:
 
@@ -104,12 +108,19 @@ To change which optional components (skills and reviewers) are installed:
 npx github:DFilipeS/praxis components
 ```
 
-This opens an interactive multi-select where you can toggle optional skills (like `agent-browser`, `figma-to-code`, `mobile-mcp`) and reviewers. Core skills are always installed and cannot be removed. If any tool adapters are enabled, their MCP configs are automatically regenerated to reflect the new selection.
+This opens an interactive multi-select where you can toggle optional skills (like `agent-browser`, `figma-to-code`, `mobile-mcp`) and reviewers. Core skills are always installed and cannot be removed. MCP configs are automatically regenerated for all enabled tools to reflect the new selection.
 
 To check the status of managed files:
 
 ```bash
 npx github:DFilipeS/praxis status
+```
+
+All commands that fetch from GitHub support a `--ref` flag to target a specific branch, tag, or commit SHA instead of `main`:
+
+```bash
+npx github:DFilipeS/praxis init --ref my-feature-branch
+npx github:DFilipeS/praxis update --ref v2.0.0
 ```
 
 #### Manual installation
@@ -211,26 +222,27 @@ Some skills require environment variables to connect to external services:
 
 ### Tool Adapters
 
-Praxis uses Amp Code's format natively (reads `AGENTS.md` and per-skill `mcp.json` files). To use Praxis with other AI coding tools, generate their configuration files with the `praxis tool` command:
+Tools are selected during `praxis init`. You can also add or remove tools later:
 
 ```bash
-# Enable one or more tools
-npx github:DFilipeS/praxis tool add claude-code cursor opencode
+# Add tools (installs files + generates MCP config)
+npx github:DFilipeS/praxis tool add claude-code cursor
 
-# Remove a tool's config files
+# Remove a tool (deletes its Praxis-managed files and config)
 npx github:DFilipeS/praxis tool remove cursor
 
 # See available adapters and which are enabled
 npx github:DFilipeS/praxis tool list
 ```
 
-**Supported tools:**
+Each adapter installs Praxis files to the tool's expected directory and generates tool-specific MCP configuration:
 
-| Tool          | What it generates                                                                |
-| ------------- | -------------------------------------------------------------------------------- |
-| `claude-code` | `CLAUDE.md` → `AGENTS.md` symlink + `.mcp.json` at project root                  |
-| `cursor`      | `.cursor/mcp.json` with `${env:VAR}` env var syntax                              |
-| `opencode`    | `opencode.json` with `{env:VAR}` syntax, merged `command` array, `type: "local"` |
+| Tool          | File directory | MCP config                                                                       |
+| ------------- | -------------- | -------------------------------------------------------------------------------- |
+| `amp-code`    | `.agents/`     | Reads per-skill `mcp.json` natively (no generation needed)                       |
+| `claude-code` | `.claude/`     | `.mcp.json` at project root with `{ "mcpServers": { ... } }` format             |
+| `cursor`      | `.cursor/`     | `.cursor/mcp.json` with `${env:VAR}` env var syntax                              |
+| `opencode`    | `.opencode/`   | `opencode.json` with `{env:VAR}` syntax, merged `command` array, `type: "local"` |
 
 Generated MCP configs contain env var _references_ (e.g., `${FIGMA_API_KEY}`), not secrets — they are safe to commit so the whole team benefits.
 
