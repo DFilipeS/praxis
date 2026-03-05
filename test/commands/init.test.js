@@ -7,11 +7,19 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 vi.mock("@clack/prompts");
 vi.mock("../../src/templates.js");
 vi.mock("../../src/commands/update.js", () => ({ update: vi.fn() }));
+vi.mock("../../src/adapters.js", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    regenerateToolConfigs: vi.fn(actual.regenerateToolConfigs),
+  };
+});
 
 import * as p from "@clack/prompts";
 import { fetchTemplates } from "../../src/templates.js";
 import { update } from "../../src/commands/update.js";
 import { hashContent } from "../../src/manifest.js";
+import { regenerateToolConfigs } from "../../src/adapters.js";
 import { init } from "../../src/commands/init.js";
 
 let tmpDir;
@@ -325,6 +333,99 @@ describe("init", () => {
 
     await expect(init()).rejects.toThrow("process.exit(0)");
     expect(p.cancel).toHaveBeenCalled();
+  });
+
+  it("installs files to tool destinations when tools are selected", async () => {
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        ["praxis/conventions.md", "# Core"],
+      ])
+    );
+
+    p.multiselect = vi.fn().mockResolvedValue(["amp-code", "cursor"]);
+
+    await init();
+
+    // Files installed to tool destinations, not source paths
+    expect(existsSync(join(tmpDir, ".agents/conventions.md"))).toBe(true);
+    expect(existsSync(join(tmpDir, ".cursor/conventions.md"))).toBe(true);
+
+    const manifest = JSON.parse(
+      await readFile(join(tmpDir, ".praxis-manifest.json"), "utf-8")
+    );
+    expect(manifest.enabledTools).toEqual(["amp-code", "cursor"]);
+    expect(manifest.files["praxis/conventions.md"].destinations).toEqual({
+      "amp-code": ".agents/conventions.md",
+      cursor: ".cursor/conventions.md",
+    });
+  });
+
+  it("generates MCP configs for enabled tools during init", async () => {
+    fetchTemplates.mockResolvedValue(
+      new Map([
+        ["praxis/conventions.md", "# Core"],
+        ["praxis/skills/figma-to-code/SKILL.md", '---\ndescription: "Figma"\n---'],
+        ["praxis/skills/figma-to-code/mcp.json", JSON.stringify({
+          figma: { command: "npx", args: ["-y", "figma-mcp"], env: { KEY: "${K}" } },
+        })],
+      ])
+    );
+
+    p.multiselect = vi.fn().mockResolvedValue(["cursor"]);
+    p.groupMultiselect = vi.fn().mockResolvedValue(["skill:figma-to-code"]);
+
+    await init();
+
+    // MCP config generated
+    expect(existsSync(join(tmpDir, ".cursor/mcp.json"))).toBe(true);
+    const mcpConfig = JSON.parse(
+      await readFile(join(tmpDir, ".cursor/mcp.json"), "utf-8")
+    );
+    expect(mcpConfig.mcpServers.figma).toBeTruthy();
+
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("Generated MCP config")
+    );
+  });
+
+  it("cancels on multiselect cancel for tool selection", async () => {
+    const cancelSymbol = Symbol("cancel");
+    p.multiselect = vi.fn().mockResolvedValue(cancelSymbol);
+    p.isCancel = vi.fn((v) => typeof v === "symbol");
+
+    await expect(init()).rejects.toThrow("process.exit(0)");
+    expect(p.cancel).toHaveBeenCalled();
+  });
+
+  it("does not log MCP config message when regenerateToolConfigs returns empty", async () => {
+    fetchTemplates.mockResolvedValue(
+      new Map([["praxis/conventions.md", "# Core"]])
+    );
+
+    p.multiselect = vi.fn().mockResolvedValue(["cursor"]);
+    regenerateToolConfigs.mockResolvedValueOnce([]);
+
+    await init();
+
+    const infoCalls = p.log.info.mock.calls.map((c) => c[0]);
+    expect(infoCalls.every((msg) => !msg.includes("Generated MCP config"))).toBe(true);
+    expect(p.outro).toHaveBeenCalled();
+  });
+
+  it("warns when MCP config generation fails during init", async () => {
+    fetchTemplates.mockResolvedValue(
+      new Map([["praxis/conventions.md", "# Core"]])
+    );
+
+    p.multiselect = vi.fn().mockResolvedValue(["cursor"]);
+    regenerateToolConfigs.mockRejectedValueOnce(new Error("disk full"));
+
+    await init();
+
+    expect(p.log.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Could not generate tool configs")
+    );
+    expect(p.outro).toHaveBeenCalled();
   });
 
   it("skips groupMultiselect when no optional components exist", async () => {

@@ -256,6 +256,145 @@ describe("status", () => {
     );
   });
 
+  it("shows missing destination file in tool mode", async () => {
+    const content = "# Core";
+    const hash = hashContent(content);
+
+    readManifest.mockResolvedValue({
+      installedAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+      enabledTools: ["amp-code"],
+      files: {
+        "praxis/conventions.md": {
+          hash,
+          destinations: {
+            "amp-code": ".agents/conventions.md",
+          },
+        },
+      },
+    });
+
+    await status();
+
+    expect(p.log.message).toHaveBeenCalledWith(
+      expect.stringContaining(".agents/conventions.md")
+    );
+    expect(p.log.message).toHaveBeenCalledWith(
+      expect.stringContaining("missing")
+    );
+    expect(p.outro).toHaveBeenCalledWith(
+      expect.stringContaining("1 missing")
+    );
+  });
+
+  it("shows legacy entry status in tool mode (unchanged)", async () => {
+    const destContent = "# Dest";
+    const destHash = hashContent(destContent);
+    const legacyContent = "# Legacy";
+    const legacyHash = hashContent(legacyContent);
+
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/conventions.md"), destContent);
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/legacy.md"), legacyContent);
+
+    readManifest.mockResolvedValue({
+      installedAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+      enabledTools: ["amp-code"],
+      files: {
+        "praxis/conventions.md": {
+          hash: destHash,
+          destinations: {
+            "amp-code": ".agents/conventions.md",
+          },
+        },
+        "praxis/legacy.md": {
+          hash: legacyHash,
+        },
+      },
+    });
+
+    await status();
+
+    expect(p.outro).toHaveBeenCalledWith(
+      expect.stringContaining("2 unchanged")
+    );
+  });
+
+  it("shows legacy entry status in tool mode (modified)", async () => {
+    const destContent = "# Dest";
+    const destHash = hashContent(destContent);
+
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/conventions.md"), destContent);
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/legacy.md"), "modified content");
+
+    readManifest.mockResolvedValue({
+      installedAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+      enabledTools: ["amp-code"],
+      files: {
+        "praxis/conventions.md": {
+          hash: destHash,
+          destinations: {
+            "amp-code": ".agents/conventions.md",
+          },
+        },
+        "praxis/legacy.md": {
+          hash: hashContent("original content"),
+        },
+      },
+    });
+
+    await status();
+
+    expect(p.log.message).toHaveBeenCalledWith(
+      expect.stringContaining("praxis/legacy.md")
+    );
+    expect(p.outro).toHaveBeenCalledWith(
+      expect.stringContaining("1 modified")
+    );
+  });
+
+  it("shows legacy entry status in tool mode (missing)", async () => {
+    const destContent = "# Dest";
+    const destHash = hashContent(destContent);
+
+    await mkdir(join(tmpDir, ".agents"), { recursive: true });
+    await writeFile(join(tmpDir, ".agents/conventions.md"), destContent);
+
+    readManifest.mockResolvedValue({
+      installedAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+      enabledTools: ["amp-code"],
+      files: {
+        "praxis/conventions.md": {
+          hash: destHash,
+          destinations: {
+            "amp-code": ".agents/conventions.md",
+          },
+        },
+        "praxis/legacy.md": {
+          hash: "deadbeef",
+        },
+      },
+    });
+
+    await status();
+
+    expect(p.log.message).toHaveBeenCalledWith(
+      expect.stringContaining("praxis/legacy.md")
+    );
+    expect(p.log.message).toHaveBeenCalledWith(
+      expect.stringContaining("missing")
+    );
+    expect(p.outro).toHaveBeenCalledWith(
+      expect.stringContaining("1 missing")
+    );
+  });
+
   it("shows MCP config status per tool", async () => {
     await mkdir(join(tmpDir, ".cursor"), { recursive: true });
     await writeFile(join(tmpDir, ".cursor/mcp.json"), "{}");
@@ -281,6 +420,54 @@ describe("status", () => {
     // claude-code config missing
     expect(p.log.message).toHaveBeenCalledWith(
       expect.stringContaining(".mcp.json")
+    );
+  });
+
+  it("does not show MCP configs section when all tools are unknown", async () => {
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/conventions.md"), "core");
+
+    readManifest.mockResolvedValue({
+      installedAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+      enabledTools: ["unknown-tool"],
+      files: {
+        "praxis/conventions.md": { hash: hashContent("core") },
+      },
+    });
+
+    await status();
+
+    // Tools section shown with raw name
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("unknown-tool")
+    );
+    // MCP configs section NOT shown (mcpLines is empty)
+    expect(p.log.info).not.toHaveBeenCalledWith("MCP configs:");
+  });
+
+  it("shows raw tool name when adapter is not found", async () => {
+    await mkdir(join(tmpDir, "praxis"), { recursive: true });
+    await writeFile(join(tmpDir, "praxis/conventions.md"), "core");
+
+    readManifest.mockResolvedValue({
+      installedAt: "2025-01-01T00:00:00.000Z",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+      enabledTools: ["amp-code", "unknown-tool"],
+      files: {
+        "praxis/conventions.md": { hash: hashContent("core") },
+      },
+    });
+
+    await status();
+
+    // Unknown tool should be shown by its raw name
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("unknown-tool")
+    );
+    // Known tool shown by display name
+    expect(p.log.info).toHaveBeenCalledWith(
+      expect.stringContaining("Amp Code")
     );
   });
 });

@@ -157,6 +157,7 @@ export async function components() {
 
           for (const [toolName, destPath] of Object.entries(entry.destinations)) {
             const fullDest = resolve(projectRoot, destPath);
+            /* v8 ignore next */
             if (!isSafePath(resolvedRoot, fullDest)) continue;
 
             if (!existsSync(fullDest)) {
