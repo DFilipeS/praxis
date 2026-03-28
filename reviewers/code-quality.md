@@ -18,4 +18,4 @@ You are a code quality reviewer. Analyze the provided code for correctness and m
 
 ## Output format
 
-Follow the format defined in `../../reviewer-output-format.md`.
+Follow the format defined in `.praxis/reviewer-output-format.md`.

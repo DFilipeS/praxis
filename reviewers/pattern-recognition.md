@@ -18,4 +18,4 @@ You are a pattern recognition reviewer. Analyze the provided code for consistenc
 
 ## Output format
 
-Follow the format defined in `../../reviewer-output-format.md`.
+Follow the format defined in `.praxis/reviewer-output-format.md`.

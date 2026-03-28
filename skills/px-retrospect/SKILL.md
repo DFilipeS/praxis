@@ -38,7 +38,7 @@ The user may add context you don't have visibility into (e.g., external factors,
 
 Distill the conversation into one or more learning files and save to `.ai-workflow/learnings/`. Each file should focus on a single, specific insight — not a broad summary of the retrospective.
 
-Follow the tag and naming conventions in @../../conventions.md.
+Follow the tag and naming conventions in `.praxis/conventions.md`.
 
 **Good learning**: "Phoenix LiveView form validation must use `phx-debounce` to avoid excessive server round-trips on every keystroke."
 
@@ -64,7 +64,7 @@ After capturing learnings:
 ## Behavioral rules
 
 - **Prioritize specificity over completeness.** Three sharp, actionable learnings are worth more than ten vague observations.
-- **Optimize for future scanning.** The knowledge-reviewer agent will search these files. Clear titles, accurate tags, and concrete recommendations make that search effective.
+- **Optimize for future scanning.** The knowledge review sub-agent will search these files. Clear titles, accurate tags, and concrete recommendations make that search effective.
 - **Don't force learnings.** If the work went smoothly and there's nothing notable, a single "pattern" learning capturing what worked is fine. Not every retrospective needs to uncover problems.
 - **Challenge vague reflections.** If the user says "the planning was bad," ask why specifically. Turn feelings into concrete, documented insights.
 - **Keep learnings standalone.** Each file should make sense without reading the full plan or idea. Include enough context in the "Context" section.

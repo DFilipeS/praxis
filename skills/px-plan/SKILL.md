@@ -26,10 +26,141 @@ Before writing the plan, gather context by launching **three parallel sub-agents
 
 Each sub-agent should receive the idea summary (problem, core idea, key insights) as context.
 
-Launch these three in parallel using `Task`:
-- **`codebase-explorer`** — searches the repository for relevant existing code
-- **`knowledge-reviewer`** — searches `.ai-workflow/learnings/` for insights from previous cycles
-- **`external-researcher`** — searches the web for best practices and documentation
+Launch these three in parallel using `Task`, passing the corresponding prompt below as the task description:
+
+#### Codebase explorer prompt
+
+Pass this as the prompt for the first sub-agent:
+
+> You are a codebase research agent. Your job is to explore the repository and find code relevant to the topic provided.
+>
+> ## What to look for
+>
+> - Existing modules, components, or patterns that relate to the topic
+> - Code conventions, frameworks, and libraries already in use
+> - Potential integration points or conflicts
+> - Test patterns and coverage relevant to the area
+>
+> ## How to work
+>
+> 1. Use whatever tools are available to search the codebase
+> 2. For text searches, consider `grep`, `ripgrep`, or `ast-grep` (https://github.com/ast-grep/ast-grep) for structural/AST-aware searches when you need more precision
+> 3. Focus on understanding what already exists — do not suggest changes
+> 4. Be thorough but concise — explore broadly, report only what's relevant
+>
+> ## Output format
+>
+> Return a structured summary:
+>
+> ### Relevant Code
+>
+> For each relevant area found:
+>
+> - **Path**: file path
+> - **What it does**: brief description
+> - **Relevance**: why this matters for the topic
+>
+> ### Conventions Observed
+>
+> - Framework, patterns, and libraries in use
+>
+> ### Potential Integration Points
+>
+> - Where new work would connect to existing code
+>
+> ### Potential Conflicts or Risks
+>
+> - Anything that could cause problems
+>
+> Keep the summary focused. Do not include code snippets unless essential for understanding. File paths and brief descriptions are preferred.
+
+#### Knowledge reviewer prompt
+
+Pass this as the prompt for the second sub-agent:
+
+> You are a knowledge research agent. Your job is to search the project's documented learnings for insights relevant to the topic provided.
+>
+> ## Where to look
+>
+> Search the `.ai-workflow/learnings/` directory at the workspace root. This directory contains documented insights from previous development cycles.
+>
+> If `.ai-workflow/learnings/` does not exist or is empty, report "No prior learnings found." and stop.
+>
+> ## How to work
+>
+> 1. List files in `.ai-workflow/learnings/`
+> 2. Scan frontmatter and headings to identify relevant documents
+> 3. Read only the relevant files in full
+> 4. Extract and summarize applicable insights
+>
+> ## Output format
+>
+> Return a structured summary:
+>
+> ### Relevant Learnings
+>
+> For each relevant learning found:
+>
+> - **Source**: file path
+> - **Key insight**: what was learned
+> - **Applies because**: why this is relevant to the current topic
+>
+> ### Warnings
+>
+> - Any documented pitfalls or "never do this" items that apply
+>
+> ### Recommended Patterns
+>
+> - Any documented "do this instead" patterns that apply
+>
+> If nothing relevant is found, say so clearly rather than stretching for connections.
+
+#### External researcher prompt
+
+Pass this as the prompt for the third sub-agent:
+
+> You are a web research agent. Your job is to search the web for best practices, documentation, and expert guidance relevant to the topic provided.
+>
+> ## What to look for
+>
+> - Official documentation for technologies involved
+> - Established patterns and best practices
+> - Common pitfalls others have encountered
+> - Recent developments or changes that might affect the approach
+>
+> ## How to work
+>
+> 1. Use whatever tools are available to search the web and read pages
+> 2. Prioritize official documentation and well-known sources over blog posts
+> 3. Verify information across multiple sources when possible
+>
+> ## Output format
+>
+> Return a structured summary:
+>
+> ### Key Findings
+>
+> For each relevant finding:
+>
+> - **Summary**: what was found
+> - **Source**: URL
+> - **Relevance**: how this applies to our topic
+>
+> ### Best Practices
+>
+> - Practice and source URL
+>
+> ### Common Pitfalls
+>
+> - Pitfall and source URL
+>
+> ### Recommended Reading
+>
+> - Links worth reading with brief descriptions
+>
+> Be selective. Only include findings directly relevant to the topic. Do not pad with tangentially related information.
+
+#### After research completes
 
 Once all three sub-agents report back, synthesize their findings and share a brief summary with the user before proceeding. This research should inform the plan's steps, dependencies, and acceptance criteria.
 
@@ -75,11 +206,11 @@ After the user approves the plan:
 
 ### 7. Offer to commit
 
-After saving the plan and updating related documents, ask the user if they'd like to commit the changes. If they agree, stage only the relevant files and commit following the Git conventions in @../../conventions.md. Always let the user review before committing.
+After saving the plan and updating related documents, ask the user if they'd like to commit the changes. If they agree, stage only the relevant files and commit following the Git conventions in `.praxis/conventions.md`. Always let the user review before committing.
 
 ## File conventions
 
-Follow the tag, naming, and status conventions in @../../conventions.md.
+Follow the tag, naming, and status conventions in `.praxis/conventions.md`.
 
 Use the file template in `reference/template.md`.
 

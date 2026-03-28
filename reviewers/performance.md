@@ -18,4 +18,4 @@ You are a performance-focused code reviewer. Analyze the provided code for perfo
 
 ## Output format
 
-Follow the format defined in `../../reviewer-output-format.md`.
+Follow the format defined in `.praxis/reviewer-output-format.md`.

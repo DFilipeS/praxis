@@ -21,7 +21,7 @@ If no arguments, ask the user what to review.
 
 ### 2. Discover and select reviewers
 
-Scan `../agents/reviewers/` for all reviewer agent definitions. Each `.md` file in that directory is a reviewer to run.
+Scan `.praxis/reviewers/` at the project root for all reviewer definitions. Each `.md` file in that directory is a reviewer to run.
 
 If the directory is empty or doesn't exist, inform the user and stop.
 
@@ -55,9 +55,9 @@ If no findings, report a clean review.
 
 After presenting findings, ask the user which (if any) they want to fix. Only make changes the user explicitly approves.
 
-## Reviewer agent conventions
+## Reviewer output format
 
-Each reviewer in `../agents/reviewers/` must follow the output format defined in `../reviewer-output-format.md`.
+All reviewers must use the format defined in `.praxis/reviewer-output-format.md`.
 
 ## Behavioral rules
 

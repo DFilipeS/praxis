@@ -20,4 +20,4 @@ You are a data integrity reviewer. Analyze the provided code for data safety, mi
 
 ## Output format
 
-Follow the format defined in `../../reviewer-output-format.md`.
+Follow the format defined in `.praxis/reviewer-output-format.md`.

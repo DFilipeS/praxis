@@ -18,4 +18,4 @@ You are an AI agent accessibility reviewer. Analyze the provided code to ensure 
 
 ## Output format
 
-Follow the format defined in `../../reviewer-output-format.md`.
+Follow the format defined in `.praxis/reviewer-output-format.md`.
