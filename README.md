@@ -4,9 +4,7 @@
 
 _From Greek: the process of putting ideas into practice._
 
-A complete AI-assisted development workflow, packaged as portable agent skills and sub-agents. Praxis implements a structured development cycle — from idea to production code to documented learnings — designed to make each cycle of work improve the next. The name reflects what this workflow is about: not just thinking or just doing, but the disciplined cycle of idea → practice → reflection that makes each iteration better than the last.
-
-This workflow mirrors how I personally develop software — brainstorm until the idea is clear, plan concretely before touching code, implement with discipline, review rigorously, and always look back to learn. Praxis encodes that process so AI agents can follow it consistently.
+A complete AI-assisted development workflow, packaged as portable agent skills. Praxis implements a structured development cycle — from idea to production code to documented learnings — designed to make each cycle of work improve the next. The name reflects what this workflow is about: not just thinking or just doing, but the disciplined cycle of idea → practice → reflection that makes each iteration better than the last.
 
 Inspired by [Every's Compound Engineering guide](https://every.to/guides/compound-engineering) and its core principle: **every unit of engineering work should make subsequent units easier, not harder.**
 
@@ -14,9 +12,9 @@ Inspired by [Every's Compound Engineering guide](https://every.to/guides/compoun
 
 **Project and technology agnostic.** Praxis is not tied to any language, framework, or tech stack. It works with any codebase — drop it into an Elixir project, a React app, a Rust CLI, or a Rails monolith. The skills describe _how to work_, not _what to work on_.
 
-**Context window efficient.** Every design decision respects the limited context window of AI agents. Templates are loaded on demand through progressive disclosure, not upfront. Research runs in parallel sub-agents that return summaries instead of polluting the main thread. Shared conventions live in one file, referenced by many. The goal: spend tokens on the real work, not on infrastructure.
+**Context window efficient.** Every design decision respects the limited context window of AI agents. Templates are loaded on demand through progressive disclosure, not upfront. Research prompts are embedded in skills and delegated to sub-agents that return summaries. Shared conventions live in one file, referenced by many. The goal: spend tokens on the real work, not on infrastructure.
 
-**Tool agnostic.** No dependency on a specific AI coding tool. Skills and agents use standard markdown with YAML frontmatter, compatible with [Amp](https://ampcode.com), [Claude Code](https://code.claude.com), [Cursor](https://cursor.com), [OpenCode](https://opencode.ai), and similar tools.
+**Tool agnostic.** No dependency on a specific AI coding tool. Skills use standard markdown with YAML frontmatter, compatible with [Amp](https://ampcode.com), [Claude Code](https://code.claude.com), [Cursor](https://cursor.com), [OpenCode](https://opencode.ai), and [40+ other tools](https://agentskills.io).
 
 ## The Cycle
 
@@ -27,16 +25,14 @@ px-brainstorm → px-plan → px-implement → px-review → px-retrospect
 ```
 
 1. **px-brainstorm** — Explore ideas through conversation. No code, no technical details. Output: idea files.
-2. **px-plan** — Turn an idea into concrete, actionable implementation plans. Parallel sub-agents research the codebase, past learnings, and external best practices. Output: plan files.
+2. **px-plan** — Turn an idea into concrete, actionable implementation plans. Inline research prompts gather codebase context, past learnings, and external best practices in parallel. Output: plan files.
 3. **px-implement** — Execute a plan step by step, committing meaningful units of work. Output: code on a feature branch.
 4. **px-review** — Run configurable reviewer agents in parallel against the changed code. Findings are presented, not auto-fixed. Output: prioritized review findings.
 5. **px-retrospect** — Analyze completed work, capture specific learnings. Output: learning files that feed back into future brainstorming and planning sessions.
 
-## Components
+## Skills
 
-### Skills
-
-Core skills implement the full development cycle and are always installed.
+Core skills implement the full development cycle.
 
 | Skill           | Description                                                                          |
 | --------------- | ------------------------------------------------------------------------------------ |
@@ -46,7 +42,7 @@ Core skills implement the full development cycle and are always installed.
 | `px-review`     | Run configurable reviewer agents in parallel; findings are presented, not auto-fixed |
 | `px-retrospect` | Capture specific learnings from completed work to improve future cycles              |
 
-Optional skills are project-specific. Select them during `praxis init` or change your selection anytime with `praxis components`.
+Optional skills are project-specific.
 
 | Skill           | Description                                                                              |
 | --------------- | ---------------------------------------------------------------------------------------- |
@@ -54,9 +50,9 @@ Optional skills are project-specific. Select them during `praxis init` or change
 | `figma-to-code` | Fetch Figma designs via MCP and implement them as React components                       |
 | `mobile-mcp`    | Automate iOS simulators and Android emulators for mobile app testing                     |
 
-### Reviewers
+## Reviewers
 
-All reviewers are optional. They run in parallel during the px-review skill. Add project-specific ones or remove built-in ones by editing the `agents/reviewers/` directory inside your tool's config folder (e.g., `.agents/agents/reviewers/` for Amp Code, `.claude/agents/reviewers/` for Claude Code).
+All reviewers are optional. They run in parallel during the px-review skill. Customize by adding or removing `.md` files in your project's `.praxis/reviewers/` directory.
 
 | Reviewer              | Description                                                                     |
 | --------------------- | ------------------------------------------------------------------------------- |
@@ -73,65 +69,45 @@ All reviewers are optional. They run in parallel during the px-review skill. Add
 
 ### Prerequisites
 
-- An AI coding agent that supports skills/agents (e.g., [Amp](https://ampcode.com), [Claude Code](https://code.claude.com), [Cursor](https://cursor.com), [OpenCode](https://opencode.ai))
+- An AI coding agent that supports skills (e.g., [Amp](https://ampcode.com), [Claude Code](https://code.claude.com), [Cursor](https://cursor.com), [OpenCode](https://opencode.ai))
 - [Git](https://git-scm.com/)
-- [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`) — fast text search
-- [ast-grep](https://github.com/ast-grep/ast-grep) (`sg`) — structural/AST-aware code search (optional, recommended)
-- [agent-browser](https://github.com/vercel-labs/agent-browser) — browser automation CLI (optional, required by `agent-browser` skill): `npm install -g agent-browser && agent-browser install`
-- [mobile-mcp](https://github.com/mobile-next/mobile-mcp) prerequisites (optional, required by `mobile-mcp` skill): Node.js v22+, Xcode CLI tools (iOS), Android SDK Platform Tools (Android)
+- [Node.js](https://nodejs.org/) 18+ (for the setup CLI)
 
 ### Installation
 
-The recommended way to install Praxis is via the CLI (requires Node.js 18+):
+Run the setup CLI in your project directory:
 
 ```bash
 npx github:DFilipeS/praxis init
 ```
 
-The `init` command walks you through an interactive setup:
-1. **Tool selection** — choose which AI coding tools you use (Amp Code, Claude Code, Cursor, OpenCode). Praxis installs files directly into each tool's expected directory (`.agents/`, `.claude/`, `.cursor/`, `.opencode/`).
-2. **Component selection** — choose which optional skills and reviewers to install.
+This will:
+1. Copy all skills to `.agents/skills/`
+2. Ask which additional coding agents to support and create symlinks (e.g., `.claude/skills/`, `.cursor/skills/`)
+3. Copy shared conventions and reviewer output format to `.praxis/`
+4. Copy default reviewers to `.praxis/reviewers/`
+5. Create `.ai-workflow/` directories
 
-It then copies all files, sets up `.ai-workflow/` directories, generates MCP configs for selected tools, and writes a `.praxis-manifest.json` file to track installed files. Commit `.praxis-manifest.json` to version control so the CLI can detect changes on future updates.
-
-To update to the latest version:
-
-```bash
-npx github:DFilipeS/praxis update
-```
-
-The update command fetches the latest files from the Praxis repo's main branch, applies changes, and prompts you before overwriting any files you've locally modified.
-
-To change which optional components (skills and reviewers) are installed:
+#### Options
 
 ```bash
-npx github:DFilipeS/praxis components
+# Use a local source instead of GitHub
+npx github:DFilipeS/praxis init --source ./path/to/praxis
+
+# Skip interactive tool selection
+npx github:DFilipeS/praxis init --no-tools
+npx github:DFilipeS/praxis init --tools claude-code,cursor
+npx github:DFilipeS/praxis init --all-tools
 ```
 
-This opens an interactive multi-select where you can toggle optional skills (like `agent-browser`, `figma-to-code`, `mobile-mcp`) and reviewers. Core skills are always installed and cannot be removed. MCP configs are automatically regenerated for all enabled tools to reflect the new selection.
+#### Alternative: npx skills
 
-To check the status of managed files:
+If you prefer, you can install skills using [npx skills](https://github.com/vercel-labs/skills) and only use the Praxis CLI for scaffolding:
 
 ```bash
-npx github:DFilipeS/praxis status
+npx skills add DFilipeS/praxis
+npx github:DFilipeS/praxis init --no-tools
 ```
-
-All commands that fetch from GitHub support a `--ref` flag to target a specific branch, tag, or commit SHA instead of `main`:
-
-```bash
-npx github:DFilipeS/praxis init --ref my-feature-branch
-npx github:DFilipeS/praxis update --ref v2.0.0
-```
-
-#### Manual installation
-
-If you don't use Node.js, copy the contents of the `praxis/` directory from this repo into your tool's config directory (e.g., `.agents/` for Amp Code, `.claude/` for Claude Code, `.cursor/` for Cursor):
-
-```bash
-cp -r path/to/praxis/praxis/* your-project/.agents/
-```
-
-Note that manual copies won't receive automatic updates or multi-tool support.
 
 ### Usage
 
@@ -151,19 +127,17 @@ Invoke skills by name through your AI agent:
 praxis/
 ├── conventions.md                        # Shared conventions (directories, naming, tags, statuses)
 ├── reviewer-output-format.md             # Shared output format for all reviewers
-├── agents/
-│   ├── codebase-explorer.md              # Explores the repo for relevant code
-│   ├── knowledge-reviewer.md             # Searches past learnings
-│   ├── external-researcher.md            # Searches the web for best practices
-│   └── reviewers/                        # Add/remove reviewers to customize
-│       ├── agent-accessibility.md
-│       ├── architecture.md
-│       ├── code-quality.md
-│       ├── data-integrity.md
-│       ├── pattern-recognition.md
-│       ├── performance.md
-│       ├── security.md                   # Includes OWASP Top 10:2025
-│       └── simplicity.md
+├── bin/
+│   └── praxis.js                         # Setup CLI
+├── reviewers/                            # Add/remove reviewers to customize
+│   ├── agent-accessibility.md
+│   ├── architecture.md
+│   ├── code-quality.md
+│   ├── data-integrity.md
+│   ├── pattern-recognition.md
+│   ├── performance.md
+│   ├── security.md                       # Includes OWASP Top 10:2025
+│   └── simplicity.md
 └── skills/
     ├── px-brainstorm/
     │   ├── SKILL.md
@@ -189,24 +163,32 @@ praxis/
         ├── SKILL.md
         └── reference/template.md         # Learning file template
 
-.ai-workflow/                             # Created automatically during use
-├── tags                                  # Shared tag registry
-├── ideas/                                # Brainstormed ideas
-├── plans/                                # Implementation plans
-└── learnings/                            # Documented insights from retrospectives
+# Created by praxis init in your project:
+.agents/skills/                            # Skills (source of truth)
+.claude/skills/                            # Symlinks (if Claude Code selected)
+.cursor/skills/                            # Symlinks (if Cursor selected)
+.praxis/
+├── conventions.md                         # Shared conventions
+├── reviewer-output-format.md              # Reviewer output format
+└── reviewers/                             # Customizable reviewers
+.ai-workflow/                              # Created automatically during use
+├── tags                                   # Shared tag registry
+├── ideas/                                 # Brainstormed ideas
+├── plans/                                 # Implementation plans
+└── learnings/                             # Documented insights from retrospectives
 ```
 
 ## Customization
 
 ### Adding project-specific reviewers
 
-Drop a `.md` file into the `agents/reviewers/` directory inside your tool's config folder (e.g., `.agents/agents/reviewers/` for Amp Code). The px-review skill discovers and runs all reviewers in that directory automatically. Follow the output format in `reviewer-output-format.md`.
+Drop a `.md` file into `.praxis/reviewers/` in your project. The px-review skill discovers and runs all reviewers in that directory automatically. Follow the output format in `.praxis/reviewer-output-format.md`.
 
-Example: create `agents/reviewers/elixir-conventions.md` for Elixir-specific checks.
+Example: create `.praxis/reviewers/elixir-conventions.md` for Elixir-specific checks.
 
 ### Removing default reviewers
 
-Delete any reviewer file you don't need. For example, remove `data-integrity.md` if your project doesn't use a database.
+Delete any reviewer file from `.praxis/reviewers/` you don't need.
 
 ### Tags
 
@@ -220,43 +202,12 @@ Some skills require environment variables to connect to external services:
 | --------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `FIGMA_API_KEY` | `figma-to-code` | [Figma personal access token](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens) with read permissions on _File content_ and _Dev resources_ |
 
-### Tool Adapters
-
-Tools are selected during `praxis init`. You can also add or remove tools later:
-
-```bash
-# Add tools (installs files + generates MCP config)
-npx github:DFilipeS/praxis tool add claude-code cursor
-
-# Remove a tool (deletes its Praxis-managed files and config)
-npx github:DFilipeS/praxis tool remove cursor
-
-# See available adapters and which are enabled
-npx github:DFilipeS/praxis tool list
-```
-
-Each adapter installs Praxis files to the tool's expected directory and generates tool-specific MCP configuration:
-
-| Tool          | File directory | MCP config                                                                       |
-| ------------- | -------------- | -------------------------------------------------------------------------------- |
-| `amp-code`    | `.agents/`     | Reads per-skill `mcp.json` natively (no generation needed)                       |
-| `claude-code` | `.claude/`     | `.mcp.json` at project root with `{ "mcpServers": { ... } }` format             |
-| `cursor`      | `.cursor/`     | `.cursor/mcp.json` with `${env:VAR}` env var syntax                              |
-| `opencode`    | `.opencode/`   | `opencode.json` with `{env:VAR}` syntax, merged `command` array, `type: "local"` |
-
-Generated MCP configs contain env var _references_ (e.g., `${FIGMA_API_KEY}`), not secrets — they are safe to commit so the whole team benefits.
-
-When you add or remove components with `praxis components`, or update with `praxis update`, the tool configs are automatically regenerated for all enabled tools.
-
-### File templates
-
-Templates for ideas, plans, and learnings live in `reference/template.md` under each skill directory. Modify them to match your team's preferences.
-
 ## Design Principles
 
 - **Compounding knowledge** — px-retrospect learnings feed back into px-brainstorm and px-plan, so the system gets smarter with each cycle.
 - **Traceability** — Every plan links to its idea, every learning links to its plan. Status fields track documents through the full lifecycle.
 - **Configurability** — Reviewers are discoverable by convention. Add or remove them per project without changing any configuration.
+- **Skills-only** — No sub-agents, no tool-specific features. Everything is a standard markdown skill compatible with any agent that supports the Agent Skills specification.
 
 ## License
 
