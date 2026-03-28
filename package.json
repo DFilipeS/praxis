@@ -1,14 +1,17 @@
 {
   "name": "@dfilipes/praxis",
-  "version": "0.1.0",
-  "description": "AI-assisted development workflow — portable agent skills and sub-agents",
+  "version": "0.2.0",
+  "description": "AI-assisted development workflow — portable agent skills",
   "type": "module",
   "bin": {
-    "praxis": "./bin/cli.js"
+    "praxis": "./bin/praxis.js"
   },
   "files": [
     "bin/",
-    "src/"
+    "skills/",
+    "reviewers/",
+    "conventions.md",
+    "reviewer-output-format.md"
   ],
   "engines": {
     "node": ">=18"
@@ -20,20 +23,8 @@
     "cli",
     "developer-experience"
   ],
-  "scripts": {
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage --coverage.provider=v8"
-  },
   "license": "MIT",
   "dependencies": {
-    "@clack/prompts": "^0.10.0",
-    "commander": "^13.1.0",
-    "diff": "^7.0.0",
-    "picocolors": "^1.1.1",
-    "tar": "^7.4.3"
-  },
-  "devDependencies": {
-    "@vitest/coverage-v8": "^4.0.18",
-    "vitest": "^4.0.18"
+    "@clack/prompts": "^0.10.0"
   }
 }
