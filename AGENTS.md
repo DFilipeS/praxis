@@ -8,6 +8,15 @@ Praxis defines a full development cycle: px-brainstorm → px-plan → px-implem
 
 The output of this workflow lives in `.ai-workflow/` (ideas, plans, learnings) in whatever project adopts Praxis. This repository itself is the tooling, not the project being built.
 
+## Critical: context window efficiency
+
+Every design decision in this project must respect the limited context window of AI agents. Tokens spent on infrastructure are tokens not spent on real work. When modifying or adding to this project:
+
+- **Load on demand.** Templates, conventions, and reference files should only enter the context when actually needed. Use progressive disclosure (`reference/template.md`) and file read instructions.
+- **Delegate to sub-agents.** Research and review work runs in parallel sub-agents that return summaries. Never do exploratory work in the main thread.
+- **Don't duplicate.** Shared conventions, output formats, and status definitions live in one place, referenced by many. If you find yourself repeating content across files, extract it.
+- **Keep files lean.** Skill files should contain instructions, not data. Move templates, examples, and reference material to separate files.
+
 ## Architecture
 
 ### Skills-only design
