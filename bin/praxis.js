@@ -13,12 +13,6 @@ import { randomUUID } from "node:crypto";
 const TOOLS = {
   "claude-code": { dir: ".claude/skills", label: "Claude Code" },
   cursor: { dir: ".cursor/skills", label: "Cursor" },
-  opencode: { dir: ".opencode/skills", label: "OpenCode" },
-  amp: { dir: ".agents/skills", label: "Amp" },
-  goose: { dir: ".goose/skills", label: "Goose" },
-  "roo-code": { dir: ".roo/skills", label: "Roo Code" },
-  codex: { dir: ".agents/skills", label: "Codex" },
-  "gemini-cli": { dir: ".agents/skills", label: "Gemini CLI" },
 };
 
 const DEFAULT_SOURCE = "DFilipeS/praxis";
